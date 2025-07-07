@@ -1,4 +1,4 @@
-type BinaryLayoutOption =
+export type BinaryLayoutOption =
   | 'LeftOf'
   | 'RightOf'
   | 'Above'
@@ -13,7 +13,7 @@ type BinaryLayoutOption =
   | 'InsideRingOf'
   | 'Contains';
 
-type UnaryLayoutOption =
+export type UnaryLayoutOption =
   | 'LeftOfCenter'
   | 'RightOfCenter'
   | 'AboveCenter'
@@ -21,7 +21,7 @@ type UnaryLayoutOption =
 
 type CyclicLayoutOption = 'Clockwise' | 'Counterclockwise';
 
-type SeparationOption =
+export type SeparationOption =
   | NoneSpecifiedSeparationOption
   | AtLeastSeparationOption
   | ExactSeparationOption;
@@ -40,25 +40,25 @@ type ExactSeparationOption = {
   distance: number;
 };
 
-type ConstrainedShape = ConcreteShape | AbstractShape;
+export type AtomInConstraint = UnboundAtom | BoundAtom;
 
-type ConcreteShape = {
-  tag: 'ConcreteShape';
+export type UnboundAtom = {
+  tag: 'UnboundAtom';
   name: string;
 };
 
-type AbstractShape = {
-  tag: 'AbstractShape';
+export type BoundAtom = {
+  tag: 'BoundAtom';
   name: string;
 };
 
-export type ConcreteLayoutOption<T extends ConstrainedShape> =
+export type ConcreteLayout<T extends AtomInConstraint> =
   | BinaryLayout<T>
   | UnaryLayout<T>
   | CyclicLayout<T>
   | GroupingLayout<T>;
 
-type BinaryLayout<T extends ConstrainedShape> = {
+export type BinaryLayout<T extends AtomInConstraint> = {
   tag: 'BinaryLayout';
   option: BinaryLayoutOption;
   separation: SeparationOption;
@@ -66,22 +66,39 @@ type BinaryLayout<T extends ConstrainedShape> = {
   op1: T;
 };
 
-type UnaryLayout<T extends ConstrainedShape> = {
+export type UnaryLayout<T extends AtomInConstraint> = {
   tag: 'UnaryLayout';
   option: UnaryLayoutOption;
   separation: SeparationOption;
   op: T;
 };
 
-type CyclicLayout<T extends ConstrainedShape> = {
+export type CyclicLayout<T extends AtomInConstraint> = {
   tag: 'CyclicLayout';
   option: CyclicLayoutOption;
   op0: T;
   op1: T;
 };
 
-type GroupingLayout<T extends ConstrainedShape> = {
+export type GroupingLayout<T extends AtomInConstraint> = {
   tag: 'GroupingLayout';
   op: T;
-  groupId: T extends AbstractShape ? undefined : string;
+  groupId: T extends BoundAtom ? undefined : string;
 };
+
+export const simpleConcreteLayout = (): ConcreteLayout<UnboundAtom>[] =>
+  [
+    {
+      tag: 'UnaryLayout',
+      option: 'AboveCenter',
+      separation: { tag: 'AtLeast', distance: 100 },
+      op: { tag: 'UnboundAtom', name: 'a0' },
+    },
+    {
+      tag: 'BinaryLayout',
+      option: 'LeftOf',
+      separation: { tag: 'Exact', distance: 50 },
+      op0: { tag: 'UnboundAtom', name: 'a1' },
+      op1: { tag: 'UnboundAtom', name: 'a2' },
+    },
+  ] as const;

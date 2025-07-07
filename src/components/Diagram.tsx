@@ -4,42 +4,47 @@ import { useCallback } from 'react';
 import { Model } from '../datamodel/Model';
 import { Instance } from '../datamodel/Instance';
 import { isArrayLiteralExpression } from 'typescript';
+import { InstanceDiagramBuilder } from '../diagram/InstanceDiagramBuilder';
+import {
+  ConcreteLayout,
+  UnboundAtom,
+} from '../constraint_language/ConcreteLayout';
+import { applyConcreteLayout } from '../constraint_language/ApplyConcreteLayout';
 
-const buildDiagram = async (model: Model, instance: Instance) => {
-  const db = new DiagramBuilder(canvas(500, 400), 'instance', 5000);
-  const {
-    type,
-    predicate,
-    forall,
-    text,
-    forallWhere,
-    ensure,
-    circle,
-    line,
-    layer,
-    group,
-  } = db;
+const buildDiagram = async (
+  model: Model,
+  instance: Instance,
+  layout: ConcreteLayout<UnboundAtom>[]
+) => {
+  const db = new InstanceDiagramBuilder(canvas(500, 400), 'instance', 5000);
+  const { forall, text, forallWhere, circle, line, layer, group, rectangle } =
+    db.getBloomBuilder();
 
-  const types = new Map(model.signatures.map(sig => [sig, type()]));
-  const predicates = new Map(
-    model.predicates.map(pred => [pred.name, predicate()])
-  );
+  rectangle({
+    center: [0, 0],
+    width: 500,
+    height: 400,
+    strokeColor: bloom.rgba(0, 0, 0, 1),
+    strokeWidth: 1,
+  });
 
-  const atomSubstances = new Map(
-    instance.atoms.map(atom => {
-      const substance = types.get(atom.type)!();
-      substance.name = atom.name;
-      return [atom.name, substance];
-    })
-  );
-  const predicateSubstances = new Array(
-    ...instance.predicates.map(pred => {
-      const args = pred.args.map(arg => atomSubstances.get(arg)!);
-      return predicates.get(pred.predicateName)!(...args);
-    })
-  );
+  for (const sig of model.signatures) {
+    db.addModelSigAsDomainType(sig);
+  }
 
-  for (const [sig, bloomType] of types) {
+  for (const pred of model.predicates) {
+    db.addModelPredicateAsDomainPredicate(pred);
+  }
+
+  for (const instanceAtom of instance.atoms) {
+    db.addInstanceAtomAsSubstanceAtom(instanceAtom);
+  }
+
+  for (const instancePredicate of instance.predicates) {
+    db.addInstancePredicateAsSubstancePredicate(instancePredicate);
+  }
+
+  for (const [sig, bloomType] of db.sigTypeMap) {
     forall({ p: bloomType }, ({ p }) => {
       p.icon = circle({
         r: 25,
@@ -57,9 +62,9 @@ const buildDiagram = async (model: Model, instance: Instance) => {
     });
   }
 
-  for (const [predName, bloomPred] of predicates) {
+  for (const [predName, bloomPred] of db.predicateMap) {
     const sigs = model.predicates.find(pred => pred.name === predName)!.sigs;
-    const bloomTypesOfSigs = sigs.map(sig => types.get(sig)!);
+    const bloomTypesOfSigs = sigs.map(sig => db.sigTypeMap.get(sig)!);
     if (bloomTypesOfSigs.length <= 1) {
       continue;
     }
@@ -115,18 +120,27 @@ const buildDiagram = async (model: Model, instance: Instance) => {
     );
   }
 
-  return db.build();
+  for (const concreteLayout of layout) {
+    applyConcreteLayout(db, concreteLayout);
+  }
+
+  return { diagram: db.getBloomBuilder().build(), db };
 };
 
 export const Diagram = ({
   model,
   instance,
+  layout,
 }: {
   model: Model;
   instance: Instance;
+  layout: ConcreteLayout<UnboundAtom>[];
 }) => {
   const diagram = bloom.useDiagram(
-    useCallback(() => buildDiagram(model, instance), [model, instance])
+    useCallback(
+      () => buildDiagram(model, instance, layout).then(r => r.diagram),
+      [model, instance, layout]
+    )
   );
   return (
     <div>

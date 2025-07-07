@@ -3,10 +3,19 @@ import { emptyInstance, Instance, simpleInstance } from '../datamodel/Instance';
 import { emptyModel, Model, simpleModel } from '../datamodel/Model';
 import ModelInstanceLoader from './ModelInstanceLoader';
 import { Diagram } from './Diagram';
+import {
+  ConcreteLayout,
+  simpleConcreteLayout,
+  UnboundAtom,
+} from '../constraint_language/ConcreteLayout';
+import ConcreteLayoutLoader from './ConcreteLayoutLoader';
 
 export const InstanceVisualizer = () => {
   const [model, setModel] = useState<Model>(simpleModel());
   const [instance, setInstance] = useState<Instance>(simpleInstance());
+  const [concreteLayout, setConcreteLayout] = useState<
+    ConcreteLayout<UnboundAtom>[]
+  >(simpleConcreteLayout());
 
   return (
     <div>
@@ -16,7 +25,11 @@ export const InstanceVisualizer = () => {
         modelSetter={setModel}
         instanceSetter={setInstance}
       />
-      <Diagram model={model} instance={instance} />
+      <ConcreteLayoutLoader
+        initialLayout={concreteLayout}
+        layoutSetter={setConcreteLayout}
+      />
+      <Diagram model={model} instance={instance} layout={concreteLayout} />
     </div>
   );
 };
