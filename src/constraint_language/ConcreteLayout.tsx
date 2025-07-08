@@ -87,6 +87,36 @@ export type GroupingLayout<T extends AtomInConstraint> = {
   groupId: T extends BoundAtom ? undefined : string;
 };
 
+const prettySeparation = (s: SeparationOption): string => {
+  switch (s.tag) {
+    case 'NoneSpecified':
+      return '';
+    case 'AtLeast':
+      return ` (separation at least ${s.distance})`;
+    case 'Exact':
+      return ` (separation exactly ${s.distance})`;
+  }
+};
+
+export const prettyConcreteLayout = <T extends AtomInConstraint>(
+  l: ConcreteLayout<T>
+): string => {
+  if (l.tag === 'BinaryLayout') {
+    return (
+      `${l.op0.name} ${l.option} ${l.op1.name}` + prettySeparation(l.separation)
+    );
+  } else if (l.tag === 'UnaryLayout') {
+    return `${l.op.name} ${l.option}` + prettySeparation(l.separation);
+  } else if (l.tag === 'CyclicLayout') {
+    return (
+      `Cycle ${l.op0.name} ${l.option} ${l.op1.name}` +
+      (l.cycleId === undefined ? '' : ` (id ${l.cycleId})`)
+    );
+  } else {
+    return `Group ${l.op.name} (id ${l.groupId})`;
+  }
+};
+
 export const simpleConcreteLayout = (): ConcreteLayout<UnboundAtom>[] => [
   {
     tag: 'UnaryLayout',
