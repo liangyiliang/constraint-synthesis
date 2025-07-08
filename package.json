@@ -32,6 +32,7 @@
     "@penrose/bloom": "4.0.0-alpha.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@dagrejs/graphlib": "2.2.4"
+    "@dagrejs/graphlib": "2.2.4",
+    "array-keyed-map": "2.1.3"
   }
 }
