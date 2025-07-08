@@ -166,13 +166,6 @@ export const moreComplexCycleConcreteLayout =
     },
     {
       tag: 'CyclicLayout',
-      option: 'Clockwise',
-      op0: { tag: 'UnboundAtom', name: 'n4' },
-      op1: { tag: 'UnboundAtom', name: 'n0' },
-      cycleId: 'cycle1',
-    },
-    {
-      tag: 'CyclicLayout',
       option: 'Counterclockwise',
       op0: { tag: 'UnboundAtom', name: 'n6' },
       op1: { tag: 'UnboundAtom', name: 'n5' },

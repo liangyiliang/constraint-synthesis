@@ -436,7 +436,6 @@ export class ConcreteLayoutApplier {
     }
 
     const cyclableNodes = graphlib.alg.topsort(graph);
-    console.log(cyclableNodes);
     this.layoutNodesInCircle(db, cyclableNodes);
   }
 
@@ -449,7 +448,7 @@ export class ConcreteLayoutApplier {
     );
 
     const bloomBuilder = db.getBloomBuilder();
-    const { circle, ensure, encourage, layer, input } = bloomBuilder;
+    const { circle, ensure, layer, input } = bloomBuilder;
 
     const makeInput = (init?: number) => input({ optimized: true, init });
 
