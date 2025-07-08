@@ -21,3 +21,18 @@ export const simpleModel = (): Model => ({
   ],
   sigHierarchy: [],
 });
+
+export const simpleCycleModel = (): Model => ({
+  signatures: ['Node'],
+  predicates: [{ name: 'red', sigs: ['Node', 'Node'] }],
+  sigHierarchy: [],
+});
+
+export const moreComplexCycleModel = (): Model => ({
+  signatures: ['Node'],
+  predicates: [
+    { name: 'red', sigs: ['Node', 'Node'] },
+    { name: 'blue', sigs: ['Node', 'Node'] },
+  ],
+  sigHierarchy: [],
+});

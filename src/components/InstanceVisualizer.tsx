@@ -1,21 +1,37 @@
 import { useState } from 'react';
-import { emptyInstance, Instance, simpleInstance } from '../datamodel/Instance';
-import { emptyModel, Model, simpleModel } from '../datamodel/Model';
+import {
+  emptyInstance,
+  Instance,
+  moreComplexCycleInstance,
+  simpleCycleInstance,
+  simpleInstance,
+} from '../datamodel/Instance';
+import {
+  emptyModel,
+  Model,
+  moreComplexCycleModel,
+  simpleCycleModel,
+  simpleModel,
+} from '../datamodel/Model';
 import ModelInstanceLoader from './ModelInstanceLoader';
 import { Diagram } from './Diagram';
 import {
   ConcreteLayout,
+  moreComplexCycleConcreteLayout,
   simpleConcreteLayout,
+  simpleCycleConcreteLayout,
   UnboundAtom,
 } from '../constraint_language/ConcreteLayout';
 import ConcreteLayoutLoader from './ConcreteLayoutLoader';
 
 export const InstanceVisualizer = () => {
-  const [model, setModel] = useState<Model>(simpleModel());
-  const [instance, setInstance] = useState<Instance>(simpleInstance());
+  const [model, setModel] = useState<Model>(moreComplexCycleModel());
+  const [instance, setInstance] = useState<Instance>(
+    moreComplexCycleInstance()
+  );
   const [concreteLayout, setConcreteLayout] = useState<
     ConcreteLayout<UnboundAtom>[]
-  >(simpleConcreteLayout());
+  >(moreComplexCycleConcreteLayout());
 
   return (
     <div>

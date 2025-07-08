@@ -1,6 +1,6 @@
 import { DiagramBuilder, Renderer, canvas } from '@penrose/bloom';
 import * as bloom from '@penrose/bloom';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Model } from '../datamodel/Model';
 import { Instance } from '../datamodel/Instance';
 import { isArrayLiteralExpression } from 'typescript';
@@ -9,7 +9,7 @@ import {
   ConcreteLayout,
   UnboundAtom,
 } from '../constraint_language/ConcreteLayout';
-import { applyConcreteLayout } from '../constraint_language/ApplyConcreteLayout';
+import { ConcreteLayoutApplier } from '../constraint_language/ApplyConcreteLayout';
 
 const buildDiagram = async (
   model: Model,
@@ -58,7 +58,7 @@ const buildDiagram = async (
         center: p.icon.center,
       });
       layer(p.icon, p.label);
-      p.shape = group({ shapes: [p.icon, p.label] });
+      // p.shape = group({ shapes: [p.icon, p.label] });
     });
   }
 
@@ -120,11 +120,14 @@ const buildDiagram = async (
     );
   }
 
+  const layoutApplier = new ConcreteLayoutApplier(db);
   for (const concreteLayout of layout) {
-    applyConcreteLayout(db, concreteLayout);
+    layoutApplier.stageConcreteLayout(concreteLayout);
   }
 
-  return { diagram: db.getBloomBuilder().build(), db };
+  layoutApplier.applyStagedLayouts();
+
+  return db.getBloomBuilder().build();
 };
 
 export const Diagram = ({
@@ -138,10 +141,11 @@ export const Diagram = ({
 }) => {
   const diagram = bloom.useDiagram(
     useCallback(
-      () => buildDiagram(model, instance, layout).then(r => r.diagram),
+      () => buildDiagram(model, instance, layout),
       [model, instance, layout]
     )
   );
+
   return (
     <div>
       <Renderer diagram={diagram} />
