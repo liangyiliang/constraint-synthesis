@@ -62,7 +62,6 @@ export const moreComplexCycleInstance = (): Instance => ({
     { predicateName: 'red', args: ['n1', 'n2'] },
     { predicateName: 'red', args: ['n2', 'n3'] },
     { predicateName: 'red', args: ['n3', 'n4'] },
-    { predicateName: 'red', args: ['n4', 'n0'] },
     { predicateName: 'blue', args: ['n5', 'n0'] },
     { predicateName: 'blue', args: ['n0', 'n1'] },
     { predicateName: 'blue', args: ['n1', 'n6'] },
