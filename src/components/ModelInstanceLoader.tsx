@@ -15,13 +15,13 @@ const editorStyle: React.CSSProperties = {
 };
 
 export const ModelInstanceLoader = ({
-  initialModel,
-  initialInstance,
+  model: initialModel,
+  instance: initialInstance,
   modelSetter,
   instanceSetter,
 }: {
-  initialModel: Model;
-  initialInstance: Instance;
+  model: Model;
+  instance: Instance;
   modelSetter: (model: Model) => void;
   instanceSetter: (instance: Instance) => void;
 }) => {

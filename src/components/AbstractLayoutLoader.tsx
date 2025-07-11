@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import {
   ConcreteLayout,
-  prettyConcreteLayout,
   UnboundAtom,
 } from '../constraint_language/ConcreteLayout';
+import {
+  AbstractLayout,
+  prettyAbstractLayout,
+} from '../constraint_language/AbstractLayout';
 
 const editorStyle: React.CSSProperties = {
   width: '100%',
@@ -17,30 +20,39 @@ const editorStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
-export const ConcreteLayoutLoader = ({
+export const AbstractLayoutLoader = ({
   layout,
   layoutSetter,
 }: {
-  layout: ConcreteLayout<UnboundAtom>[];
-  layoutSetter: (layout: ConcreteLayout<UnboundAtom>[]) => void;
+  layout: AbstractLayout[];
+  layoutSetter: (layout: AbstractLayout[]) => void;
 }) => {
+  const [layoutJson, setLayoutJson] = useState<string>(
+    JSON.stringify(layout, null, 2)
+  );
+
   return (
     <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
       <div style={{ flex: 1, minWidth: 300 }}>
         <label>
-          <strong>Concrete</strong>
+          <strong>Abstract</strong>
         </label>
         <textarea
           style={editorStyle}
-          value={JSON.stringify(layout, null, 2)}
+          value={layoutJson}
+          onChange={e => setLayoutJson(e.target.value)}
           spellCheck={false}
           rows={5}
-          readOnly
         />
 
         <button
           onClick={() => {
-            layoutSetter(layout);
+            try {
+              const parsedLayout = JSON.parse(layoutJson) as AbstractLayout[];
+              layoutSetter(parsedLayout);
+            } catch (e) {
+              alert('Invalid JSON');
+            }
           }}
         >
           Load
@@ -48,7 +60,7 @@ export const ConcreteLayoutLoader = ({
       </div>
       <div style={{ flex: 1, minWidth: 300 }}>
         <label>
-          <strong>Pretty-printed Concrete Layout</strong>
+          <strong>Pretty-printed Abstract Layout</strong>
         </label>
         <pre
           style={{
@@ -59,11 +71,11 @@ export const ConcreteLayoutLoader = ({
             wordBreak: 'break-word',
           }}
         >
-          {layout.map(prettyConcreteLayout).join('\n')}
+          {layout.map(prettyAbstractLayout).join('\n')}
         </pre>
       </div>
     </div>
   );
 };
 
-export default ConcreteLayoutLoader;
+export default AbstractLayoutLoader;

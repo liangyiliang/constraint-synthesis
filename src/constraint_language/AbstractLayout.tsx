@@ -32,7 +32,7 @@ export type AbstractLayout = {
   layout: AbstractLayout | ConcreteLayout<BoundAtom>;
 };
 
-const prettyAbstractLayout = (layout: AbstractLayout): string => {
+export const prettyAbstractLayout = (layout: AbstractLayout): string => {
   const { selector, layout: inner } = layout;
   return `IF ${prettySelector(selector)} THEN ${
     inner.tag === 'AbstractLayout'
@@ -40,3 +40,69 @@ const prettyAbstractLayout = (layout: AbstractLayout): string => {
       : prettyConcreteLayout(inner)
   }`;
 };
+
+export const moreComplexCycleAbstractLayout = (): AbstractLayout[] => [
+  {
+    tag: 'AbstractLayout',
+    selector: {
+      tag: 'PredSelector',
+      pred: 'red',
+      args: ['n0', 'n1'],
+    },
+    layout: {
+      tag: 'CyclicLayout',
+      option: 'Clockwise',
+      op0: { tag: 'BoundAtom', name: 'n0' },
+      op1: { tag: 'BoundAtom', name: 'n1' },
+      cycleId: undefined,
+    },
+  },
+  {
+    tag: 'AbstractLayout',
+    selector: {
+      tag: 'PredSelector',
+      pred: 'blue',
+      args: ['n0', 'n1'],
+    },
+    layout: {
+      tag: 'CyclicLayout',
+      option: 'Counterclockwise',
+      op0: { tag: 'BoundAtom', name: 'n0' },
+      op1: { tag: 'BoundAtom', name: 'n1' },
+      cycleId: undefined,
+    },
+  },
+];
+
+export const moreComplexCycleAbstractLayout2 = (): AbstractLayout[] => [
+  {
+    tag: 'AbstractLayout',
+    selector: {
+      tag: 'PredSelector',
+      pred: 'red',
+      args: ['n0', 'n1'],
+    },
+    layout: {
+      tag: 'BinaryLayout',
+      option: 'DirectlyLeftOf',
+      op0: { tag: 'BoundAtom', name: 'n0' },
+      op1: { tag: 'BoundAtom', name: 'n1' },
+      separation: { tag: 'AtLeast', distance: 90 },
+    },
+  },
+  {
+    tag: 'AbstractLayout',
+    selector: {
+      tag: 'PredSelector',
+      pred: 'blue',
+      args: ['n0', 'n1'],
+    },
+    layout: {
+      tag: 'BinaryLayout',
+      option: 'DirectlyBelow',
+      op0: { tag: 'BoundAtom', name: 'n0' },
+      op1: { tag: 'BoundAtom', name: 'n1' },
+      separation: { tag: 'AtLeast', distance: 90 },
+    },
+  },
+];

@@ -2,6 +2,7 @@ import { emptyInstance, Instance } from '../datamodel/Instance';
 import { emptyModel, Model } from '../datamodel/Model';
 import { InstanceDiagramBuilder } from '../diagram/InstanceDiagramBuilder';
 import { AbstractLayout } from './AbstractLayout';
+import { ConcreteLayoutApplier } from './ApplyConcreteLayout';
 import { BoundAtom, ConcreteLayout, UnboundAtom } from './ConcreteLayout';
 
 class AbstractLayoutEnv {
@@ -102,122 +103,119 @@ class AbstractLayoutEnv {
 
 type Subst = Record<string, string>;
 
-class AbstractLayoutApplier {
-  private db: InstanceDiagramBuilder;
-  private model: Model;
-  private instance: Instance;
-  private layouts: AbstractLayout[];
-
-  constructor(db: InstanceDiagramBuilder) {
-    this.db = db;
-    this.layouts = [];
-    this.model = emptyModel();
-    this.instance = emptyInstance();
+export function compileAbstractLayouts(
+  layouts: AbstractLayout[],
+  model: Model,
+  instance: Instance
+): ConcreteLayout<UnboundAtom>[] {
+  const concretes: ConcreteLayout<UnboundAtom>[] = [];
+  for (let i = 0; i < layouts.length; i++) {
+    const layout = layouts[i];
+    const env = new AbstractLayoutEnv();
+    const compiled = compileAbstractLayoutHelper(
+      layout,
+      model,
+      instance,
+      env,
+      i
+    );
+    concretes.push(...compiled);
   }
+  return concretes;
+}
 
-  loadModel(model: Model) {
-    this.model = model;
-  }
-  loadInstance(instance: Instance) {
-    this.instance = instance;
-  }
-  stageAbstractLayout(layout: AbstractLayout) {
-    this.layouts.push(layout);
-  }
+function compileAbstractLayoutHelper(
+  layout: AbstractLayout,
+  model: Model,
+  instance: Instance,
+  env: AbstractLayoutEnv,
+  layoutNo: number
+): ConcreteLayout<UnboundAtom>[] {
+  const { selector, layout: inner } = layout;
 
-  private applyAbstractLayout(
-    layout: AbstractLayout,
-    model: Model,
-    instance: Instance,
-    env: AbstractLayoutEnv,
-    layoutNo: number
-  ): ConcreteLayout<UnboundAtom>[] {
-    const { selector, layout: inner } = layout;
-
-    if (selector.tag === 'SigSelector') {
-      const { sig, varname } = selector;
-      const atomNames = instance.atoms
-        .filter(atom => atom.type === sig)
-        .map(atom => atom.name);
-      for (const atomName of atomNames) {
-        env.add(varname, atomName);
+  if (selector.tag === 'SigSelector') {
+    const { sig, varname } = selector;
+    const atomNames = instance.atoms
+      .filter(atom => atom.type === sig)
+      .map(atom => atom.name);
+    for (const atomName of atomNames) {
+      env.add(varname, atomName);
+    }
+  } else {
+    const { pred, args } = selector;
+    const predicates = instance.predicates.filter(
+      p => p.predicateName === pred
+    );
+    const tuples = predicates.map(p => p.args);
+    for (const tuple of tuples) {
+      if (args.length !== tuple.length) {
+        throw new Error(
+          `Selector ${pred} expects ${args.length} args, but got ${tuple.length}`
+        );
       }
-    } else {
-      const { pred, args } = selector;
-      const predicates = instance.predicates.filter(
-        p => p.predicateName === pred
-      );
-      const tuples = predicates.map(p => p.args);
-      for (const tuple of tuples) {
-        if (args.length !== tuple.length) {
-          throw new Error(
-            `Selector ${pred} expects ${args.length} args, but got ${tuple.length}`
-          );
-        }
-        env.add(args, tuple);
-      }
-    }
-
-    if (inner.tag === 'AbstractLayout') {
-      // Recursive case
-      return this.applyAbstractLayout(inner, model, instance, env, layoutNo);
-    } else {
-      // Concrete layout
-      const substs = env.toSubstitutions();
-      const concretes: ConcreteLayout<UnboundAtom>[] = substs.map(subst =>
-        this.applySubstitution(inner, subst, layoutNo.toString())
-      );
-      return concretes;
+      env.add(args, tuple);
     }
   }
 
-  private applySubstitution(
-    layout: ConcreteLayout<BoundAtom>,
-    subst: Subst,
-    id: string
-  ): ConcreteLayout<UnboundAtom> {
-    if (layout.tag === 'BinaryLayout') {
-      return {
-        ...layout,
-        op0: {
-          tag: 'UnboundAtom',
-          name: subst[layout.op0.name],
-        },
-        op1: {
-          tag: 'UnboundAtom',
-          name: subst[layout.op1.name],
-        },
-      };
-    } else if (layout.tag === 'UnaryLayout') {
-      return {
-        ...layout,
-        op: {
-          tag: 'UnboundAtom',
-          name: subst[layout.op.name],
-        },
-      };
-    } else if (layout.tag === 'CyclicLayout') {
-      return {
-        ...layout,
-        op0: {
-          tag: 'UnboundAtom',
-          name: subst[layout.op0.name],
-        },
-        op1: {
-          tag: 'UnboundAtom',
-          name: subst[layout.op1.name],
-        },
-        cycleId: 'cycle-' + id,
-      };
-    } else {
-      return {
-        ...layout,
-        op: {
-          tag: 'UnboundAtom',
-          name: subst[layout.op.name],
-        },
-        groupId: 'group-' + id,
-      };
-    }
+  if (inner.tag === 'AbstractLayout') {
+    // Recursive case
+    return compileAbstractLayoutHelper(inner, model, instance, env, layoutNo);
+  } else {
+    // Concrete layout
+    const substs = env.toSubstitutions();
+    const concretes: ConcreteLayout<UnboundAtom>[] = substs.map(subst =>
+      applySubstitution(inner, subst, layoutNo.toString())
+    );
+    return concretes;
+  }
+}
+
+function applySubstitution(
+  layout: ConcreteLayout<BoundAtom>,
+  subst: Subst,
+  id: string
+): ConcreteLayout<UnboundAtom> {
+  if (layout.tag === 'BinaryLayout') {
+    return {
+      ...layout,
+      op0: {
+        tag: 'UnboundAtom',
+        name: subst[layout.op0.name],
+      },
+      op1: {
+        tag: 'UnboundAtom',
+        name: subst[layout.op1.name],
+      },
+    };
+  } else if (layout.tag === 'UnaryLayout') {
+    return {
+      ...layout,
+      op: {
+        tag: 'UnboundAtom',
+        name: subst[layout.op.name],
+      },
+    };
+  } else if (layout.tag === 'CyclicLayout') {
+    return {
+      ...layout,
+      op0: {
+        tag: 'UnboundAtom',
+        name: subst[layout.op0.name],
+      },
+      op1: {
+        tag: 'UnboundAtom',
+        name: subst[layout.op1.name],
+      },
+      cycleId: 'cycle-' + id,
+    };
+  } else {
+    return {
+      ...layout,
+      op: {
+        tag: 'UnboundAtom',
+        name: subst[layout.op.name],
+      },
+      groupId: 'group-' + id,
+    };
   }
 }

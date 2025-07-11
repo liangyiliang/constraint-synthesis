@@ -63,6 +63,14 @@ const buildDiagram = async (
   }
 
   for (const [predName, bloomPred] of db.predicateMap) {
+    // hack for demo
+    const col =
+      predName === 'red'
+        ? bloom.rgba(1, 0, 0, 1)
+        : predName === 'blue'
+        ? bloom.rgba(0, 0, 1, 1)
+        : bloom.rgba(0, 0, 0, 1);
+
     const sigs = model.predicates.find(pred => pred.name === predName)!.sigs;
     const bloomTypesOfSigs = sigs.map(sig => db.sigTypeMap.get(sig)!);
     if (bloomTypesOfSigs.length <= 1) {
@@ -112,7 +120,7 @@ const buildDiagram = async (
         line({
           endArrowhead: 'straight',
           ensureOnCanvas: false,
-          strokeColor: bloom.rgba(1, 0, 0, 1),
+          strokeColor: col,
           start: [start[0], start[1]],
           end: [end[0], end[1]],
         });

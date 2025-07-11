@@ -58,6 +58,10 @@ export class ConcreteLayoutApplier {
   }
 
   applyStagedLayouts(): void {
+    for (const [cycleId, graph] of this.cycleGraphs) {
+      this.applyCyclicLayout(this.db, cycleId, graph);
+    }
+
     for (const layout of this.binaryLayouts) {
       this.binaryLayoutAppliers[layout.option](
         this.db,
@@ -72,10 +76,6 @@ export class ConcreteLayoutApplier {
         layout.separation,
         layout.op
       );
-    }
-
-    for (const [cycleId, graph] of this.cycleGraphs) {
-      this.applyCyclicLayout(this.db, cycleId, graph);
     }
   }
 
@@ -457,7 +457,8 @@ export class ConcreteLayoutApplier {
     const refCircle = circle({
       center: refCenter,
       r: refRadius,
-      strokeColor: bloom.rgba(0, 0, 0, 1),
+      strokeColor: bloom.rgba(0, 0, 0, 0.2),
+      strokeStyle: 'dashed',
       strokeWidth: 1,
       fillColor: bloom.none(),
       drag: true,
