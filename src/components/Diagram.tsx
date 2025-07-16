@@ -1,8 +1,8 @@
 import { DiagramBuilder, Renderer, canvas } from '@penrose/bloom';
 import * as bloom from '@penrose/bloom';
 import { useCallback, useState } from 'react';
-import { Model } from '../datamodel/Model';
-import { Instance } from '../datamodel/Instance';
+import { Model } from '../model_instance/Model';
+import { Instance } from '../model_instance/Instance';
 import { isArrayLiteralExpression } from 'typescript';
 import { InstanceDiagramBuilder } from '../diagram/InstanceDiagramBuilder';
 import {
@@ -10,6 +10,7 @@ import {
   UnboundAtom,
 } from '../constraint_language/ConcreteLayout';
 import { ConcreteLayoutApplier } from '../constraint_language/ApplyConcreteLayout';
+import { AbstractDiagram } from '../inference/ConstraintConfidence';
 
 const buildDiagram = async (
   model: Model,
@@ -17,8 +18,17 @@ const buildDiagram = async (
   layout: ConcreteLayout<UnboundAtom>[]
 ) => {
   const db = new InstanceDiagramBuilder(canvas(500, 400), 'instance', 5000);
-  const { forall, text, forallWhere, circle, line, layer, group, rectangle } =
-    db.getBloomBuilder();
+  const {
+    forall,
+    text,
+    forallWhere,
+    circle,
+    line,
+    layer,
+    group,
+    rectangle,
+    input,
+  } = db.getBloomBuilder();
 
   rectangle({
     center: [0, 0],
@@ -46,7 +56,16 @@ const buildDiagram = async (
 
   for (const [sig, bloomType] of db.sigTypeMap) {
     forall({ p: bloomType }, ({ p }) => {
+      const cx = input({
+        name: `x_${p.name}`,
+        optimized: true,
+      });
+      const cy = input({
+        name: `y_${p.name}`,
+        optimized: true,
+      });
       p.icon = circle({
+        center: [cx, cy],
         r: 25,
         drag: true,
         fillColor: bloom.rgba(1, 0.8, 0, 1),
@@ -142,10 +161,12 @@ export const Diagram = ({
   model,
   instance,
   layout,
+  setAbstractDiagram,
 }: {
   model: Model;
   instance: Instance;
   layout: ConcreteLayout<UnboundAtom>[];
+  setAbstractDiagram: (d: AbstractDiagram) => void;
 }) => {
   const diagram = bloom.useDiagram(
     useCallback(
@@ -157,6 +178,27 @@ export const Diagram = ({
   return (
     <div>
       <Renderer diagram={diagram} />
+      <button
+        onClick={() => {
+          const absDiag: AbstractDiagram = {};
+          for (const atom of instance.atoms) {
+            const cx = diagram?.getInput(`x_${atom.name}`);
+            const cy = diagram?.getInput(`y_${atom.name}`);
+            if (cx === undefined || cy === undefined) {
+              throw new Error(
+                `Could not find inputs for atom ${atom.name}: cx=${cx}, cy=${cy}`
+              );
+            }
+            absDiag[atom.name] = {
+              x: cx,
+              y: cy,
+            };
+          }
+          setAbstractDiagram(absDiag);
+        }}
+      >
+        Set Diagram
+      </button>
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import { emptyInstance, Instance } from '../datamodel/Instance';
-import { emptyModel, Model } from '../datamodel/Model';
+import { emptyInstance, Instance } from '../model_instance/Instance';
+import { emptyModel, Model } from '../model_instance/Model';
 import { InstanceDiagramBuilder } from '../diagram/InstanceDiagramBuilder';
 import { AbstractLayout } from './AbstractLayout';
 import { ConcreteLayoutApplier } from './ApplyConcreteLayout';

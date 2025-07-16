@@ -1,7 +1,7 @@
 import * as bloom from '@penrose/bloom';
 import { Canvas } from '@penrose/core';
-import { InstanceAtom, InstancePredicate } from '../datamodel/Instance';
-import { ModelPredicate } from '../datamodel/Model';
+import { InstanceAtom, InstancePredicate } from '../model_instance/Instance';
+import { ModelPredicate } from '../model_instance/Model';
 
 export class InstanceDiagramBuilder {
   private db: bloom.DiagramBuilder;

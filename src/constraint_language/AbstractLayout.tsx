@@ -2,15 +2,26 @@ import {
   BoundAtom,
   ConcreteLayout,
   prettyConcreteLayout,
+  BinaryLayoutOption,
+  UnaryLayoutOption,
+  SeparationOption,
+  BinaryLayout,
+  UnaryLayout,
+  CyclicLayout,
+  GroupingLayout,
 } from './ConcreteLayout';
+import { Model, simpleModel, simpleCycleModel } from '../model_instance/Model';
+import { BOUND } from '../inference/NaiveInference';
 
-type SigSelector = {
+export type Selector = SigSelector | PredSelector;
+
+export type SigSelector = {
   tag: 'SigSelector';
   sig: string;
   varname: string;
 };
 
-type PredSelector = {
+export type PredSelector = {
   tag: 'PredSelector';
   pred: string;
   args: string[];
@@ -34,11 +45,45 @@ export type AbstractLayout = {
 
 export const prettyAbstractLayout = (layout: AbstractLayout): string => {
   const { selector, layout: inner } = layout;
-  return `IF ${prettySelector(selector)} THEN ${
+  const str = `IF ${prettySelector(selector)} THEN ${
     inner.tag === 'AbstractLayout'
       ? prettyAbstractLayout(inner)
       : prettyConcreteLayout(inner)
   }`;
+
+  if ('confidence' in layout) {
+    return `${str} (confidence: ${layout.confidence})`;
+  } else {
+    return str;
+  }
+};
+
+export const simpleAbstractLayout = (): AbstractLayout[] => {
+  return [
+    {
+      tag: 'AbstractLayout',
+      selector: {
+        tag: 'SigSelector',
+        sig: 'Apple',
+        varname: 'a0',
+      },
+      layout: {
+        tag: 'AbstractLayout',
+        selector: {
+          tag: 'SigSelector',
+          sig: 'Apple',
+          varname: 'a1',
+        },
+        layout: {
+          tag: 'BinaryLayout',
+          option: 'LeftOf',
+          op0: { tag: 'BoundAtom', name: 'a0' },
+          op1: { tag: 'BoundAtom', name: 'a1' },
+          separation: { tag: 'NoneSpecified' },
+        },
+      },
+    },
+  ];
 };
 
 export const moreComplexCycleAbstractLayout = (): AbstractLayout[] => [
@@ -103,6 +148,32 @@ export const moreComplexCycleAbstractLayout2 = (): AbstractLayout[] => [
       op0: { tag: 'BoundAtom', name: 'n0' },
       op1: { tag: 'BoundAtom', name: 'n1' },
       separation: { tag: 'AtLeast', distance: 90 },
+    },
+  },
+];
+
+export const multipleSigsAbstractLayout = (): AbstractLayout[] => [
+  {
+    tag: 'AbstractLayout',
+    selector: {
+      tag: 'SigSelector',
+      sig: 'Apple',
+      varname: 'a0',
+    },
+    layout: {
+      tag: 'AbstractLayout',
+      selector: {
+        tag: 'SigSelector',
+        sig: 'Banana',
+        varname: 'a1',
+      },
+      layout: {
+        tag: 'BinaryLayout',
+        option: 'LeftOf',
+        op0: { tag: 'BoundAtom', name: 'a0' },
+        op1: { tag: 'BoundAtom', name: 'a1' },
+        separation: { tag: 'AtLeast', distance: 50 },
+      },
     },
   },
 ];

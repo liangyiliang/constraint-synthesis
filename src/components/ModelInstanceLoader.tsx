@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Instance } from '../datamodel/Instance';
-import { Model } from '../datamodel/Model';
+import { Instance } from '../model_instance/Instance';
+import { Model } from '../model_instance/Model';
 
 const editorStyle: React.CSSProperties = {
   width: '100%',

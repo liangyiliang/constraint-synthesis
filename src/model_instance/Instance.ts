@@ -26,8 +26,7 @@ export const simpleInstance = (): Instance => ({
   ],
   predicates: [
     { predicateName: 'redder', args: ['a0', 'a1'] },
-    { predicateName: 'bigger', args: ['a1', 'a2'] },
-    { predicateName: 'isSweet', args: ['a1'] },
+    { predicateName: 'redder', args: ['a1', 'a2'] },
   ],
 });
 
@@ -61,10 +60,23 @@ export const moreComplexCycleInstance = (): Instance => ({
     { predicateName: 'red', args: ['n0', 'n1'] },
     { predicateName: 'red', args: ['n1', 'n2'] },
     { predicateName: 'red', args: ['n2', 'n3'] },
-    // { predicateName: 'red', args: ['n3', 'n4'] },
-    // { predicateName: 'blue', args: ['n5', 'n0'] },
+    { predicateName: 'red', args: ['n3', 'n4'] },
+    { predicateName: 'red', args: ['n4', 'n0'] },
+    { predicateName: 'blue', args: ['n5', 'n0'] },
     { predicateName: 'blue', args: ['n0', 'n1'] },
     { predicateName: 'blue', args: ['n1', 'n6'] },
-    // { predicateName: 'blue', args: ['n6', 'n5'] },
+    { predicateName: 'blue', args: ['n6', 'n5'] },
   ],
+});
+
+export const multipleSigsInstance = (): Instance => ({
+  atoms: [
+    { name: 'n0', type: 'Apple' },
+    { name: 'n1', type: 'Banana' },
+    { name: 'n2', type: 'Apple' },
+    { name: 'n3', type: 'Banana' },
+    { name: 'n4', type: 'Apple' },
+    { name: 'n5', type: 'Banana' },
+  ],
+  predicates: [],
 });

@@ -12,13 +12,10 @@ export const emptyModel = (): Model => ({
   predicates: [],
   sigHierarchy: [],
 });
+
 export const simpleModel = (): Model => ({
   signatures: ['Apple'],
-  predicates: [
-    { name: 'redder', sigs: ['Apple', 'Apple'] },
-    { name: 'bigger', sigs: ['Apple', 'Apple'] },
-    { name: 'isSweet', sigs: ['Apple'] },
-  ],
+  predicates: [{ name: 'redder', sigs: ['Apple', 'Apple'] }],
   sigHierarchy: [],
 });
 
@@ -34,5 +31,11 @@ export const moreComplexCycleModel = (): Model => ({
     { name: 'red', sigs: ['Node', 'Node'] },
     { name: 'blue', sigs: ['Node', 'Node'] },
   ],
+  sigHierarchy: [],
+});
+
+export const multipleSigsModel = (): Model => ({
+  signatures: ['Apple', 'Banana'],
+  predicates: [],
   sigHierarchy: [],
 });
