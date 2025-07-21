@@ -1,11 +1,11 @@
 import { log } from '@penrose/bloom';
-import { AbstractLayout } from '../constraint_language/AbstractLayout';
-import { compileAbstractLayouts } from '../constraint_language/ApplyAbstractLayout';
+import { AbstractLayout } from '../constraint_language/abstract/AbstractLayout';
+import { compileAbstractLayouts } from '../constraint_language/abstract/ApplyAbstractLayout';
 import {
   BinaryLayoutOption,
   ConcreteLayout,
   UnboundAtom,
-} from '../constraint_language/ConcreteLayout';
+} from '../constraint_language/concrete/ConcreteLayout';
 import { Instance } from '../model_instance/Instance';
 import { Model } from '../model_instance/Model';
 
@@ -129,7 +129,7 @@ const binaryConcreteConfidenceFn: Record<
   },
 };
 
-const confidenceOfConcrete = (
+export const confidenceOfConcrete = (
   concrete: ConcreteLayout<UnboundAtom>,
   diagram: AbstractDiagram
 ): number => {

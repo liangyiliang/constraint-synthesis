@@ -10,7 +10,7 @@ import {
   UnaryLayoutOption,
   UnboundAtom,
 } from './ConcreteLayout';
-import { InstanceDiagramBuilder } from '../diagram/InstanceDiagramBuilder';
+import { InstanceDiagramBuilder } from '../../diagram/InstanceDiagramBuilder';
 import * as graphlib from '@dagrejs/graphlib';
 
 export class ConcreteLayoutApplier {

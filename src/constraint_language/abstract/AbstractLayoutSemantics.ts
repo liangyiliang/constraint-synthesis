@@ -1,11 +1,19 @@
-import { emptyInstance, Instance } from '../model_instance/Instance';
-import { emptyModel, Model } from '../model_instance/Model';
-import { InstanceDiagramBuilder } from '../diagram/InstanceDiagramBuilder';
-import { AbstractLayout } from './AbstractLayout';
-import { ConcreteLayoutApplier } from './ApplyConcreteLayout';
-import { BoundAtom, ConcreteLayout, UnboundAtom } from './ConcreteLayout';
+import { Instance } from '../../model_instance/Instance';
+import { Model } from '../../model_instance/Model';
+import { cartesianProduct } from '../../utils/utils';
+import {
+  BinaryLayout,
+  BoundAtom,
+  ConcreteLayout,
+  UnaryLayout,
+  UnboundAtom,
+} from '../concrete/ConcreteLayout';
+import { Selector } from './AbstractLayout';
 
-class AbstractLayoutEnv {
+/**
+ * Maps (tuples of) selector varnames into (tuples of) atom.
+ */
+export class SelectorEnv {
   private map: Map<string, string[]>;
 
   constructor() {
@@ -37,18 +45,18 @@ class AbstractLayoutEnv {
     this.map.get(keyDesc)?.push(valueDesc);
   }
 
-  toSubstitutions(): Subst[] {
+  toSubstitutions(): AbstractLayoutSubst[] {
     const entries = Array.from(this.map.entries()).map(([k, v]) => ({
       varnamesDesc: k,
       possibleMatchesDesc: v,
     }));
 
     const possibleMatchesDescs = entries.map(e => e.possibleMatchesDesc);
-    const prod = this.cartesianProduct(possibleMatchesDescs);
+    const prod = cartesianProduct(possibleMatchesDescs);
 
     const varnamesDescs = entries.map(e => e.varnamesDesc);
 
-    const substs: Subst[] = [];
+    const substs: AbstractLayoutSubst[] = [];
     for (const entry of prod) {
       const subst = this.buildSubst(varnamesDescs, entry);
       if (subst === undefined) {
@@ -63,7 +71,7 @@ class AbstractLayoutEnv {
   private buildSubst(
     varnamesDescs: string[],
     matchesDescs: string[]
-  ): Subst | undefined {
+  ): AbstractLayoutSubst | undefined {
     if (varnamesDescs.length !== matchesDescs.length) {
       throw new Error(
         `varnamesDescs = ${varnamesDescs}, matchesDescs = ${matchesDescs}, length mismatch`
@@ -73,7 +81,7 @@ class AbstractLayoutEnv {
     const varnames = varnamesDescs.flatMap(desc => this.fromDescriptor(desc));
     const matches = matchesDescs.flatMap(desc => this.fromDescriptor(desc));
 
-    const subst: Subst = {};
+    const subst: AbstractLayoutSubst = {};
     for (let i = 0; i < varnames.length; i++) {
       const varname = varnames[i];
       const match = matches[i];
@@ -84,54 +92,31 @@ class AbstractLayoutEnv {
     }
     return subst;
   }
-
-  private cartesianProduct(arrays: string[][]): string[][] {
-    return arrays.reduce(
-      (acc, curr) => {
-        const result: string[][] = [];
-        for (const a of acc) {
-          for (const b of curr) {
-            result.push([...a, b]);
-          }
-        }
-        return result;
-      },
-      [[]] as string[][]
-    );
-  }
 }
 
-type Subst = Record<string, string>;
+export type AbstractLayoutSubst = Record<string, string>;
 
-export function compileAbstractLayouts(
-  layouts: AbstractLayout[],
+export const selectorsToSubsts = (
+  selectors: Selector[],
   model: Model,
   instance: Instance
-): ConcreteLayout<UnboundAtom>[] {
-  const concretes: ConcreteLayout<UnboundAtom>[] = [];
-  for (let i = 0; i < layouts.length; i++) {
-    const layout = layouts[i];
-    const env = new AbstractLayoutEnv();
-    const compiled = compileAbstractLayoutHelper(
-      layout,
-      model,
-      instance,
-      env,
-      i
-    );
-    concretes.push(...compiled);
-  }
-  return concretes;
-}
+): AbstractLayoutSubst[] => {
+  const env = new SelectorEnv();
+  const substs = selectorsToSubstsHelper(selectors, model, instance, env);
+  return substs;
+};
 
-function compileAbstractLayoutHelper(
-  layout: AbstractLayout,
+const selectorsToSubstsHelper = (
+  selectors: Selector[],
   model: Model,
   instance: Instance,
-  env: AbstractLayoutEnv,
-  layoutNo: number
-): ConcreteLayout<UnboundAtom>[] {
-  const { selector, layout: inner } = layout;
+  env: SelectorEnv
+): AbstractLayoutSubst[] => {
+  if (selectors.length === 0) {
+    return env.toSubstitutions();
+  }
+
+  const [selector, ...rest] = selectors;
 
   if (selector.tag === 'SigSelector') {
     const { sig, varname } = selector;
@@ -157,22 +142,32 @@ function compileAbstractLayoutHelper(
     }
   }
 
-  if (inner.tag === 'AbstractLayout') {
-    // Recursive case
-    return compileAbstractLayoutHelper(inner, model, instance, env, layoutNo);
-  } else {
-    // Concrete layout
-    const substs = env.toSubstitutions();
-    const concretes: ConcreteLayout<UnboundAtom>[] = substs.map(subst =>
-      applySubstitution(inner, subst, layoutNo.toString())
-    );
-    return concretes;
-  }
-}
+  return selectorsToSubstsHelper(rest, model, instance, env);
+};
 
-function applySubstitution(
+export function applySubstitution(
+  layout: BinaryLayout<BoundAtom>,
+  subst: AbstractLayoutSubst,
+  id: string
+): BinaryLayout<UnboundAtom>;
+export function applySubstitution(
+  layout: UnaryLayout<BoundAtom>,
+  subst: AbstractLayoutSubst,
+  id: string
+): UnaryLayout<UnboundAtom>;
+export function applySubstitution(
+  layout: UnaryLayout<BoundAtom> | BinaryLayout<BoundAtom>,
+  subst: AbstractLayoutSubst,
+  id: string
+): UnaryLayout<UnboundAtom> | BinaryLayout<UnboundAtom>;
+export function applySubstitution(
   layout: ConcreteLayout<BoundAtom>,
-  subst: Subst,
+  subst: AbstractLayoutSubst,
+  id: string
+): ConcreteLayout<UnboundAtom>;
+export function applySubstitution(
+  layout: ConcreteLayout<BoundAtom>,
+  subst: AbstractLayoutSubst,
   id: string
 ): ConcreteLayout<UnboundAtom> {
   if (layout.tag === 'BinaryLayout') {

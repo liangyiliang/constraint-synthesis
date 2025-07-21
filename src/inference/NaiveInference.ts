@@ -3,8 +3,8 @@ import {
   PredSelector,
   prettyAbstractLayout,
   SigSelector,
-} from '../constraint_language/AbstractLayout';
-import { checkAbstractLayout } from '../constraint_language/CheckAbstractLayout';
+} from '../constraint_language/abstract/AbstractLayout';
+import { checkAbstractLayout } from '../constraint_language/abstract/CheckAbstractLayout';
 import {
   BinaryLayoutOption,
   BoundAtom,
@@ -12,10 +12,10 @@ import {
   prettyConcreteLayout,
   SeparationOption,
   UnaryLayoutOption,
-} from '../constraint_language/ConcreteLayout';
+} from '../constraint_language/concrete/ConcreteLayout';
 import { Instance } from '../model_instance/Instance';
 import { Model, simpleCycleModel, simpleModel } from '../model_instance/Model';
-import { AbstractDiagram, computeConfidence } from './ConstraintConfidence';
+import { AbstractDiagram, computeConfidence } from './ConfidenceScore';
 
 export const BOUND = 2;
 
@@ -253,10 +253,12 @@ export const generateAllAbstractLayouts = (
   // Generate abstract layouts up to the bound
 
   const layouts: AbstractLayoutWithConfidence[] = [];
+  let c = 0;
   for (let i = 1; i <= bound; i++) {
     const abstractLayouts = generateAbstractLayoutsRecursive(i);
     for (const abs of abstractLayouts) {
       if (abs.tag === 'AbstractLayout' && checkAbstractLayout(abs, model)) {
+        c += 1;
         const conf = computeConfidence(abs, instance, model, diagram);
         if (conf > 0.5) {
           layouts.push({

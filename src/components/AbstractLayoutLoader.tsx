@@ -2,11 +2,11 @@ import { useState } from 'react';
 import {
   ConcreteLayout,
   UnboundAtom,
-} from '../constraint_language/ConcreteLayout';
+} from '../constraint_language/concrete/ConcreteLayout';
 import {
   AbstractLayout,
   prettyAbstractLayout,
-} from '../constraint_language/AbstractLayout';
+} from '../constraint_language/abstract/AbstractLayout';
 import { editorStyle } from './style';
 
 export const AbstractLayoutLoader = ({
@@ -35,7 +35,9 @@ export const AbstractLayoutLoader = ({
         />
 
         <button
-          onClick={() => {
+          type="button"
+          onClick={e => {
+            e.preventDefault();
             try {
               const parsedLayout = JSON.parse(layoutJson) as AbstractLayout[];
               layoutSetter(parsedLayout);

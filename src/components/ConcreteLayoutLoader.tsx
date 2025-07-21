@@ -3,7 +3,7 @@ import {
   ConcreteLayout,
   prettyConcreteLayout,
   UnboundAtom,
-} from '../constraint_language/ConcreteLayout';
+} from '../constraint_language/concrete/ConcreteLayout';
 import { editorStyle } from './style';
 
 export const ConcreteLayoutLoader = ({
@@ -28,7 +28,9 @@ export const ConcreteLayoutLoader = ({
         />
 
         <button
-          onClick={() => {
+          type="button"
+          onClick={e => {
+            e.preventDefault();
             layoutSetter(layout);
           }}
         >

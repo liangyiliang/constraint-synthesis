@@ -9,9 +9,13 @@ import {
   UnaryLayout,
   CyclicLayout,
   GroupingLayout,
-} from './ConcreteLayout';
-import { Model, simpleModel, simpleCycleModel } from '../model_instance/Model';
-import { BOUND } from '../inference/NaiveInference';
+} from '../concrete/ConcreteLayout';
+import {
+  Model,
+  simpleModel,
+  simpleCycleModel,
+} from '../../model_instance/Model';
+import { BOUND } from '../../inference/NaiveInference';
 
 export type Selector = SigSelector | PredSelector;
 

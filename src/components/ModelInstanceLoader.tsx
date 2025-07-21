@@ -59,7 +59,9 @@ export const ModelInstanceLoader = ({
         />
         <div style={{ marginTop: '10px', textAlign: 'right' }}>
           <button
-            onClick={() => {
+            type="button"
+            onClick={e => {
+              e.preventDefault();
               try {
                 const parsedModel = JSON.parse(modelJson) as Model;
                 const parsedInstance = JSON.parse(instanceJson) as Instance;

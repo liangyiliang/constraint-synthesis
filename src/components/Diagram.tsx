@@ -8,9 +8,9 @@ import { InstanceDiagramBuilder } from '../diagram/InstanceDiagramBuilder';
 import {
   ConcreteLayout,
   UnboundAtom,
-} from '../constraint_language/ConcreteLayout';
-import { ConcreteLayoutApplier } from '../constraint_language/ApplyConcreteLayout';
-import { AbstractDiagram } from '../inference/ConstraintConfidence';
+} from '../constraint_language/concrete/ConcreteLayout';
+import { ConcreteLayoutApplier } from '../constraint_language/concrete/ApplyConcreteLayout';
+import { AbstractDiagram } from '../inference/ConfidenceScore';
 
 const buildDiagram = async (
   model: Model,
@@ -147,12 +147,12 @@ const buildDiagram = async (
     );
   }
 
-  const layoutApplier = new ConcreteLayoutApplier(db);
-  for (const concreteLayout of layout) {
-    layoutApplier.stageConcreteLayout(concreteLayout);
-  }
+  // const layoutApplier = new ConcreteLayoutApplier(db);
+  // for (const concreteLayout of layout) {
+  //   layoutApplier.stageConcreteLayout(concreteLayout);
+  // }
 
-  layoutApplier.applyStagedLayouts();
+  // layoutApplier.applyStagedLayouts();
 
   return db.getBloomBuilder().build();
 };
@@ -179,22 +179,26 @@ export const Diagram = ({
     <div>
       <Renderer diagram={diagram} />
       <button
-        onClick={() => {
-          const absDiag: AbstractDiagram = {};
-          for (const atom of instance.atoms) {
-            const cx = diagram?.getInput(`x_${atom.name}`);
-            const cy = diagram?.getInput(`y_${atom.name}`);
-            if (cx === undefined || cy === undefined) {
-              throw new Error(
-                `Could not find inputs for atom ${atom.name}: cx=${cx}, cy=${cy}`
-              );
+        onClick={e => {
+          try {
+            const absDiag: AbstractDiagram = {};
+            for (const atom of instance.atoms) {
+              const cx = diagram?.getInput(`x_${atom.name}`);
+              const cy = diagram?.getInput(`y_${atom.name}`);
+              if (cx === undefined || cy === undefined) {
+                throw new Error(
+                  `Could not find inputs for atom ${atom.name}: cx=${cx}, cy=${cy}`
+                );
+              }
+              absDiag[atom.name] = {
+                x: cx,
+                y: cy,
+              };
             }
-            absDiag[atom.name] = {
-              x: cx,
-              y: cy,
-            };
+            setAbstractDiagram(absDiag);
+          } catch (error) {
+            console.error('Error setting diagram:', error);
           }
-          setAbstractDiagram(absDiag);
         }}
       >
         Set Diagram

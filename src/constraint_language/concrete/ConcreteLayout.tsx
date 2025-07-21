@@ -1,25 +1,33 @@
-export type BinaryLayoutOption =
-  | 'LeftOf'
-  | 'RightOf'
-  | 'Above'
-  | 'Below'
-  | 'DirectlyLeftOf'
-  | 'DirectlyRightOf'
-  | 'DirectlyAbove'
-  | 'DirectlyBelow'
-  | 'HorizontallyAligned'
-  | 'VerticallyAligned'
-  | 'OutsideRingOf'
-  | 'InsideRingOf'
-  | 'Contains';
+export const BinaryLayoutOptions = [
+  'LeftOf',
+  'RightOf',
+  'Above',
+  'Below',
+  'DirectlyLeftOf',
+  'DirectlyRightOf',
+  'DirectlyAbove',
+  'DirectlyBelow',
+  'HorizontallyAligned',
+  'VerticallyAligned',
+  'OutsideRingOf',
+  'InsideRingOf',
+  'Contains',
+] as const;
 
-export type UnaryLayoutOption =
-  | 'LeftOfCenter'
-  | 'RightOfCenter'
-  | 'AboveCenter'
-  | 'BelowCenter';
+export type BinaryLayoutOption = (typeof BinaryLayoutOptions)[number];
 
-type CyclicLayoutOption = 'Clockwise' | 'Counterclockwise';
+export const UnaryLayoutOptions = [
+  'LeftOfCenter',
+  'RightOfCenter',
+  'AboveCenter',
+  'BelowCenter',
+] as const;
+
+export type UnaryLayoutOption = (typeof UnaryLayoutOptions)[number];
+
+export const CyclicLayoutOptions = ['Clockwise', 'Counterclockwise'] as const;
+
+export type CyclicLayoutOption = (typeof CyclicLayoutOptions)[number];
 
 export type SeparationOption =
   | NoneSpecifiedSeparationOption
@@ -51,6 +59,9 @@ export type BoundAtom = {
   tag: 'BoundAtom';
   name: string;
 };
+
+export type BoundConcrete = ConcreteLayout<BoundAtom>;
+export type UnboundConcrete = ConcreteLayout<UnboundAtom>;
 
 export type ConcreteLayout<T extends AtomInConstraint> =
   | BinaryLayout<T>

@@ -1,4 +1,4 @@
-import { Model } from '../model_instance/Model';
+import { Model } from '../../model_instance/Model';
 import { AbstractLayout, Selector } from './AbstractLayout';
 
 export function checkAbstractLayout(
@@ -8,13 +8,13 @@ export function checkAbstractLayout(
   return checkAbstractLayoutHelper(layout, model, {});
 }
 
-type CheckerEnv = Record<string, string>;
+export type TypeEnv = Record<string, string>;
 
 function checkSelector(
   sel: Selector,
   model: Model,
-  env: CheckerEnv
-): CheckerEnv | undefined {
+  env: TypeEnv
+): TypeEnv | undefined {
   if (sel.tag === 'SigSelector') {
     const { varname, sig } = sel;
     if (varname in env) {
@@ -54,7 +54,7 @@ function checkSelector(
 function checkAbstractLayoutHelper(
   layout: AbstractLayout,
   model: Model,
-  env: CheckerEnv
+  env: TypeEnv
 ): boolean {
   const { selector, layout: inner } = layout;
 
