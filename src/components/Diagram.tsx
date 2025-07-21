@@ -84,11 +84,15 @@ const buildDiagram = async (
   for (const [predName, bloomPred] of db.predicateMap) {
     // hack for demo
     const col =
-      predName === 'red'
-        ? bloom.rgba(1, 0, 0, 1)
-        : predName === 'blue'
-        ? bloom.rgba(0, 0, 1, 1)
-        : bloom.rgba(0, 0, 0, 1);
+      predName === 'NextSegment'
+        ? bloom.rgba(1, 0, 0, 1) // red
+        : predName === 'TrackSegment'
+        ? bloom.rgba(0, 0, 1, 1) // blue
+        : predName === 'TransponderOnSegment'
+        ? bloom.rgba(0, 0.6, 0, 1) // green
+        : predName === 'TrainOnSegment'
+        ? bloom.rgba(0.6, 0.8, 0.2, 1) // yellow
+        : bloom.rgba(0, 0, 0, 1); // black
 
     const sigs = model.predicates.find(pred => pred.name === predName)!.sigs;
     const bloomTypesOfSigs = sigs.map(sig => db.sigTypeMap.get(sig)!);

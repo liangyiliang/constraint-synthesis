@@ -10,10 +10,11 @@ import {
   genAbstractLayouts,
   prettyInferredAbstractLayout,
 } from '../inference/SmarterInference';
+import { RailwayInstance, RailwayModel } from '../examples/Railway';
 
 export const InstanceVisualizer = () => {
-  const [model, setModel] = useState<Model>(simpleModel());
-  const [instance, setInstance] = useState<Instance>(simpleInstance());
+  const [model, setModel] = useState<Model>(RailwayModel());
+  const [instance, setInstance] = useState<Instance>(RailwayInstance());
   const [abstractDiagram, setAbstractDiagram] = useState<AbstractDiagram>({});
 
   return (
