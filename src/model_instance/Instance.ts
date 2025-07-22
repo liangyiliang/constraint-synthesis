@@ -18,18 +18,6 @@ export const emptyInstance = (): Instance => ({
   predicates: [],
 });
 
-export const simpleInstance = (): Instance => ({
-  atoms: [
-    { name: 'a0', type: 'Apple' },
-    { name: 'a1', type: 'Apple' },
-    { name: 'a2', type: 'Apple' },
-  ],
-  predicates: [
-    { predicateName: 'redder', args: ['a0', 'a1'] },
-    { predicateName: 'redder', args: ['a1', 'a2'] },
-  ],
-});
-
 export const simpleCycleInstance = (): Instance => ({
   atoms: [
     { name: 'n0', type: 'Node' },

@@ -22,6 +22,7 @@ import {
   CyclicLayout,
   CyclicLayoutOption,
   CyclicLayoutOptions,
+  GroupingLayout,
   prettyConcreteLayout,
   UnaryLayout,
   UnaryLayoutOptions,
@@ -84,9 +85,66 @@ const binaryEquivalentExisting = (
   return false;
 };
 
+type Footprint = UnboundConcrete;
+
+const toFootprint = (uC: UnboundConcrete): Footprint => {
+  if (uC.tag === 'BinaryLayout') {
+    const { option, op0, op1 } = uC;
+    const [orderedOp0, orderedOp1] =
+      op0.name < op1.name ? [op0, op1] : [op1, op0];
+    if (uC.option === 'Below') {
+      return {
+        ...uC,
+        option: 'Above',
+        op0: op1,
+        op1: op0,
+      };
+    } else if (uC.option === 'RightOf') {
+      return {
+        ...uC,
+        option: 'LeftOf',
+        op0: op1,
+        op1: op0,
+      };
+    } else if (uC.option === 'DirectlyBelow') {
+      return {
+        ...uC,
+        option: 'DirectlyAbove',
+        op0: op1,
+        op1: op0,
+      };
+    } else if (uC.option === 'DirectlyRightOf') {
+      return {
+        ...uC,
+        option: 'DirectlyLeftOf',
+        op0: op1,
+        op1: op0,
+      };
+    } else if (uC.option === 'HorizontallyAligned') {
+      return {
+        ...uC,
+        option: 'HorizontallyAligned',
+        op0: orderedOp0,
+        op1: orderedOp1,
+      };
+    } else if (uC.option === 'VerticallyAligned') {
+      return {
+        ...uC,
+        option: 'VerticallyAligned',
+        op0: orderedOp0,
+        op1: orderedOp1,
+      };
+    } else {
+      return uC;
+    }
+  } else {
+    return uC;
+  }
+};
+
 type InferredConcrete = {
   inferred: BoundConcrete;
-  footprint: UnboundConcrete[];
+  footprints: Footprint[];
   confidence: number;
 };
 
@@ -115,7 +173,7 @@ const checkTerminalConcrete = (
   if (satisfied) {
     return {
       inferred: concrete,
-      footprint: unboundConcretes,
+      footprints: unboundConcretes.map(toFootprint),
       confidence: compoundConf,
     };
   } else {
@@ -188,13 +246,13 @@ const getSatisfyingBoundConcretes = (
 type InferredAbstractLayout = {
   inferred: AbstractLayout;
   confidence: number;
-  footprint: UnboundConcrete[];
+  footprints: Footprint[];
 };
 
 export const prettyInferredAbstractLayout = (
   inferred: InferredAbstractLayout
 ) => {
-  const { inferred: abstractLayout, confidence, footprint } = inferred;
+  const { inferred: abstractLayout, confidence, footprints } = inferred;
   return prettyAbstractLayout(abstractLayout) + '; confidence = ' + confidence;
 };
 
@@ -226,15 +284,11 @@ const composeAbstractLayout = (
   selectors: Selector[],
   inferredConcrete: InferredConcrete
 ): InferredAbstractLayout => {
-  const {
-    inferred: concrete,
-    footprint: effects,
-    confidence,
-  } = inferredConcrete;
+  const { inferred: concrete, footprints, confidence } = inferredConcrete;
   return {
     inferred: composeAbstractLayoutHelper(selectors, concrete),
     confidence,
-    footprint: effects,
+    footprints,
   };
 };
 
@@ -317,11 +371,14 @@ export const genAbstractLayouts = (
       'sig'
     );
     for (const a of thisResults) {
-      const { footprint: effects } = a;
-      const effectsStr = effects
-        .map(prettyConcreteLayout)
+      const { footprints } = a;
+
+      const effectsStr = new Array(
+        ...new Set(footprints.map(prettyConcreteLayout))
+      )
         .toSorted()
         .join(', ');
+      console.log(effectsStr);
 
       const curr = abstractLayouts.get(effectsStr);
       if (curr === undefined) {
@@ -418,8 +475,8 @@ const genAbstractLayoutsHelper = (
       }
 
       for (const a of generated) {
-        const { footprint: effects } = a;
-        const effectsStr = effects
+        const { footprints } = a;
+        const effectsStr = footprints
           .map(prettyConcreteLayout)
           .toSorted()
           .join(', ');

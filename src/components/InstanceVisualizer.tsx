@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Instance, simpleInstance } from '../model_instance/Instance';
-import { Model, simpleModel } from '../model_instance/Model';
+import { Instance } from '../model_instance/Instance';
+import { Model } from '../model_instance/Model';
 import ModelInstanceLoader from './ModelInstanceLoader';
 import { Diagram } from './Diagram';
 import { AbstractLayout } from '../constraint_language/abstract/AbstractLayout';
@@ -11,6 +11,7 @@ import {
   prettyInferredAbstractLayout,
 } from '../inference/SmarterInference';
 import { RailwayInstance, RailwayModel } from '../examples/Railway';
+import { SimpleInstance, SimpleModel } from '../examples/Simple';
 
 export const InstanceVisualizer = () => {
   const [model, setModel] = useState<Model>(RailwayModel());
