@@ -54,37 +54,6 @@ const cyclicDescriptor = (
   return `${op0.name} ${option} ${op1.name}`;
 };
 
-const binaryEquivalentExisting = (
-  concrete: BinaryLayout<BoundAtom>,
-  existingDescriptors: string[]
-): boolean => {
-  const { op0, op1, option } = concrete;
-
-  const oppositePairs: [BinaryLayoutOption, BinaryLayoutOption][] = [
-    ['Above', 'Below'],
-    ['Below', 'Above'],
-    ['DirectlyAbove', 'DirectlyBelow'],
-    ['DirectlyBelow', 'DirectlyAbove'],
-    ['LeftOf', 'RightOf'],
-    ['RightOf', 'LeftOf'],
-    ['DirectlyLeftOf', 'DirectlyRightOf'],
-    ['DirectlyRightOf', 'DirectlyLeftOf'],
-    ['HorizontallyAligned', 'HorizontallyAligned'],
-    ['VerticallyAligned', 'VerticallyAligned'],
-  ];
-
-  for (const [opposite0, opposite1] of oppositePairs) {
-    if (
-      option === opposite0 &&
-      existingDescriptors.includes(binaryDescriptor(op1, opposite1, op0))
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-};
-
 type Footprint = UnboundConcrete;
 
 const toFootprint = (uC: UnboundConcrete): Footprint => {
@@ -209,7 +178,7 @@ const getSatisfyingBoundConcretes = (
     }
   }
 
-  const consideredBinaryDescriptors: string[] = [];
+  // const consideredBinaryDescriptors: string[] = [];
   for (const binaryOption of BinaryLayoutOptions) {
     for (const v0 of vars) {
       for (const v1 of vars) {
@@ -221,17 +190,13 @@ const getSatisfyingBoundConcretes = (
             separation: { tag: 'NoneSpecified' },
             option: binaryOption,
           };
-          if (
-            !binaryEquivalentExisting(concrete, consideredBinaryDescriptors)
-          ) {
-            const checked = checkTerminalConcrete(concrete, substs, diagram);
-            if (checked !== undefined) {
-              concretes.push(checked);
-            }
+          const checked = checkTerminalConcrete(concrete, substs, diagram);
+          if (checked !== undefined) {
+            concretes.push(checked);
           }
-          consideredBinaryDescriptors.push(
-            binaryDescriptor(concrete.op0, concrete.option, concrete.op1)
-          );
+          // consideredBinaryDescriptors.push(
+          //   binaryDescriptor(concrete.op0, concrete.option, concrete.op1)
+          // );
         }
       }
     }
@@ -250,10 +215,16 @@ type InferredAbstractLayout = {
 };
 
 export const prettyInferredAbstractLayout = (
-  inferred: InferredAbstractLayout
+  inferred: InferredAbstractLayout,
+  withConfidence: boolean = true
 ) => {
-  const { inferred: abstractLayout, confidence, footprints } = inferred;
-  return prettyAbstractLayout(abstractLayout) + '; confidence = ' + confidence;
+  const { inferred: abstractLayout, confidence } = inferred;
+  const str = prettyAbstractLayout(abstractLayout);
+  if (withConfidence) {
+    return str + '; confidence = ' + confidence;
+  } else {
+    return str;
+  }
 };
 
 const composeAbstractLayoutHelper = (
@@ -292,27 +263,27 @@ const composeAbstractLayout = (
   };
 };
 
-const genVarnames = (bound: number): string[] => {
-  return Array.from({ length: bound }, (_, i) => `v${i}`);
-};
-
 const genSigSelectors = (
   model: Model,
   typeEnv: TypeEnv,
-  bound: number
+  numVarsAvailable: number
 ): SigSelector[] => {
   const sss: SigSelector[] = [];
   for (const sig of model.signatures) {
-    for (const varname of genVarnames(bound)) {
-      if (typeEnv[varname] === sig) {
-        // skip, already exists
-      } else {
-        sss.push({
-          tag: 'SigSelector',
-          sig,
-          varname,
-        });
-      }
+    const varname = `v${numVarsAvailable}`;
+    const existing = typeEnv[varname];
+    if (existing === undefined) {
+      sss.push({
+        tag: 'SigSelector',
+        sig,
+        varname,
+      });
+    } else if (existing === sig) {
+      // okay
+    } else {
+      throw new Error(
+        `Type environment already has ${varname} bound to sig ${existing}, but trying to bind it to sig ${sig}`
+      );
     }
   }
   return sss;
@@ -321,7 +292,7 @@ const genSigSelectors = (
 const genPredSelectors = (
   model: Model,
   typeEnv: TypeEnv,
-  bound: number
+  numVarsAvailable: number
 ): PredSelector[] => {
   const sigVarnamesMap: Map<string, string[]> = new Map();
   for (const [varname, sig] of Object.entries(typeEnv)) {
@@ -358,9 +329,10 @@ export const genAbstractLayouts = (
   instance: Instance,
   diag: AbstractDiagram
 ): InferredAbstractLayout[] => {
-  const abstractLayouts: Map<string, InferredAbstractLayout> = new Map();
+  const footprintAbstractLayoutMap: Map<string, InferredAbstractLayout> =
+    new Map();
   for (let i = 0; i < bound; i++) {
-    const thisResults = genAbstractLayoutsHelper(
+    genAbstractLayoutsHelper(
       i,
       [],
       [],
@@ -368,33 +340,12 @@ export const genAbstractLayouts = (
       instance,
       diag,
       {},
-      'sig'
+      'sig',
+      footprintAbstractLayoutMap,
+      0
     );
-    for (const a of thisResults) {
-      const { footprints } = a;
-
-      const effectsStr = new Array(
-        ...new Set(footprints.map(prettyConcreteLayout))
-      )
-        .toSorted()
-        .join(', ');
-      console.log(effectsStr);
-
-      const curr = abstractLayouts.get(effectsStr);
-      if (curr === undefined) {
-        abstractLayouts.set(effectsStr, a);
-      } else {
-        // prefer the one with lower complexity
-        if (
-          abstractLayoutComplexity(a.inferred) <
-          abstractLayoutComplexity(curr.inferred)
-        ) {
-          abstractLayouts.set(effectsStr, a);
-        }
-      }
-    }
   }
-  return [...abstractLayouts.values()];
+  return [...footprintAbstractLayoutMap.values()];
 };
 
 const abstractLayoutComplexity = (
@@ -407,6 +358,29 @@ const abstractLayoutComplexity = (
   }
 };
 
+const addAbstractLayout = (
+  abstractLayouts: Map<string, InferredAbstractLayout>,
+  a: InferredAbstractLayout
+): void => {
+  const { footprints } = a;
+  const effectsStr = new Array(...new Set(footprints.map(prettyConcreteLayout)))
+    .toSorted()
+    .join(', ');
+
+  const curr = abstractLayouts.get(effectsStr);
+  if (curr === undefined) {
+    abstractLayouts.set(effectsStr, a);
+  } else {
+    // prefer the one with lower complexity
+    if (
+      abstractLayoutComplexity(a.inferred) <
+      abstractLayoutComplexity(curr.inferred)
+    ) {
+      abstractLayouts.set(effectsStr, a);
+    }
+  }
+};
+
 const genAbstractLayoutsHelper = (
   bound: number,
   sigSelectors: SigSelector[],
@@ -415,8 +389,10 @@ const genAbstractLayoutsHelper = (
   instance: Instance,
   diag: AbstractDiagram,
   typeEnv: TypeEnv,
-  thisSelectorType: 'sig' | 'pred'
-): InferredAbstractLayout[] => {
+  thisSelectorType: 'sig' | 'pred',
+  footprintAbstractLayoutMap: Map<string, InferredAbstractLayout>,
+  numVarsAvailable: number
+): void => {
   if (bound === 0) {
     const substs: AbstractLayoutSubst[] = selectorsToSubsts(
       [...sigSelectors, ...predSelectors],
@@ -429,9 +405,14 @@ const genAbstractLayoutsHelper = (
       diag
     );
 
-    return inferredConcretes.map(c =>
-      composeAbstractLayout([...sigSelectors, ...predSelectors], c)
-    );
+    for (const inferredConcrete of inferredConcretes) {
+      const a = composeAbstractLayout(
+        [...sigSelectors, ...predSelectors],
+        inferredConcrete
+      );
+      addAbstractLayout(footprintAbstractLayoutMap, a);
+    }
+    return;
   }
 
   const nextSelectorTypes =
@@ -441,17 +422,14 @@ const genAbstractLayoutsHelper = (
 
   const thisGeneratedSelectors =
     thisSelectorType === 'sig'
-      ? genSigSelectors(model, typeEnv, bound)
-      : genPredSelectors(model, typeEnv, bound);
-
-  const abstractLayouts: Map<string, InferredAbstractLayout> = new Map();
+      ? genSigSelectors(model, typeEnv, numVarsAvailable)
+      : genPredSelectors(model, typeEnv, numVarsAvailable);
 
   for (const s of thisGeneratedSelectors) {
     for (const next of nextSelectorTypes) {
-      let generated;
       if (s.tag === 'SigSelector') {
         const newTypeEnv: TypeEnv = { ...typeEnv, [s.varname]: s.sig };
-        generated = genAbstractLayoutsHelper(
+        genAbstractLayoutsHelper(
           bound - 1,
           [...sigSelectors, s],
           predSelectors,
@@ -459,10 +437,12 @@ const genAbstractLayoutsHelper = (
           instance,
           diag,
           newTypeEnv,
-          next
+          next,
+          footprintAbstractLayoutMap,
+          numVarsAvailable + 1
         );
       } else {
-        generated = genAbstractLayoutsHelper(
+        genAbstractLayoutsHelper(
           bound - 1,
           sigSelectors,
           [...predSelectors, s],
@@ -470,32 +450,11 @@ const genAbstractLayoutsHelper = (
           instance,
           diag,
           typeEnv,
-          next
+          next,
+          footprintAbstractLayoutMap,
+          numVarsAvailable
         );
-      }
-
-      for (const a of generated) {
-        const { footprints } = a;
-        const effectsStr = footprints
-          .map(prettyConcreteLayout)
-          .toSorted()
-          .join(', ');
-
-        const curr = abstractLayouts.get(effectsStr);
-        if (curr === undefined) {
-          abstractLayouts.set(effectsStr, a);
-        } else {
-          // prefer the one with lower complexity
-          if (
-            abstractLayoutComplexity(a.inferred) <
-            abstractLayoutComplexity(curr.inferred)
-          ) {
-            abstractLayouts.set(effectsStr, a);
-          }
-        }
       }
     }
   }
-
-  return [...abstractLayouts.values()];
 };

@@ -2,12 +2,11 @@ import { Instance } from '../model_instance/Instance';
 import { Model } from '../model_instance/Model';
 
 export const RailwayModel = (): Model => ({
-  signatures: ['Train', 'Segment', 'Track', 'Transponder'],
+  signatures: ['Segment', 'Track', 'Transponder'],
   predicates: [
     { name: 'NextSegment', sigs: ['Segment', 'Segment'] },
     { name: 'TrackSegment', sigs: ['Track', 'Segment'] },
     { name: 'TransponderOnSegment', sigs: ['Transponder', 'Segment'] },
-    { name: 'TrainOnSegment', sigs: ['Train', 'Segment'] },
   ],
   sigHierarchy: [],
 });
@@ -24,7 +23,6 @@ export const RailwayInstance = (): Instance => ({
     { name: 'tp1', type: 'Transponder' },
     { name: 'tp2', type: 'Transponder' },
     { name: 'tp3', type: 'Transponder' },
-    { name: 'tr1', type: 'Train' },
   ],
   predicates: [
     { predicateName: 'TrackSegment', args: ['t1', 's1'] },
@@ -38,6 +36,5 @@ export const RailwayInstance = (): Instance => ({
     { predicateName: 'TransponderOnSegment', args: ['tp1', 's1'] },
     { predicateName: 'TransponderOnSegment', args: ['tp2', 's3'] },
     { predicateName: 'TransponderOnSegment', args: ['tp3', 's4'] },
-    { predicateName: 'TrainOnSegment', args: ['tr1', 's5'] },
   ],
 });

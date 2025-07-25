@@ -49,7 +49,7 @@ export const InstanceVisualizer = () => {
                 abstractDiagram
               );
               const str = inferreds
-                .map(prettyInferredAbstractLayout)
+                .map(i => prettyInferredAbstractLayout(i, true))
                 .join('\n');
               const panel = document.getElementById('generated-layouts-panel');
               if (panel) {

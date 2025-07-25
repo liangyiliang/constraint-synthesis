@@ -14,7 +14,7 @@ import {
   UnaryLayoutOption,
 } from '../constraint_language/concrete/ConcreteLayout';
 import { Instance } from '../model_instance/Instance';
-import { Model, simpleCycleModel, simpleModel } from '../model_instance/Model';
+import { Model, simpleCycleModel } from '../model_instance/Model';
 import { AbstractDiagram, computeConfidence } from './ConfidenceScore';
 
 export const BOUND = 2;
