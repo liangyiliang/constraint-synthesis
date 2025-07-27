@@ -13,6 +13,7 @@ import {
 
 import { TypeEnv } from '../constraint_language/abstract/CheckAbstractLayout';
 import {
+  AtomInConstraint,
   BinaryLayout,
   BinaryLayoutOption,
   BinaryLayoutOptions,
@@ -25,6 +26,7 @@ import {
   GroupingLayout,
   prettyConcreteLayout,
   UnaryLayout,
+  UnaryLayoutOption,
   UnaryLayoutOptions,
   UnboundAtom,
   UnboundConcrete,
@@ -38,95 +40,152 @@ import {
   confidenceOfConcrete,
 } from './ConfidenceScore';
 
-const binaryDescriptor = (
-  op0: BoundAtom,
-  option: BinaryLayoutOption,
-  op1: BoundAtom
-): string => {
-  return `${op0.name} ${option} ${op1.name}`;
-};
+type Footprint =
+  | UnaryLayout<UnboundAtom>
+  | CyclicLayout<UnboundAtom>
+  | GroupingLayout<UnboundAtom>
+  | (BinaryLayout<UnboundAtom> & {
+      option: Exclude<
+        BinaryLayoutOption,
+        | 'Below'
+        | 'RightOf'
+        | 'DirectlyLeftOf'
+        | 'DirectlyRightOf'
+        | 'DirectlyAbove'
+        | 'DirectlyBelow'
+      >;
+    });
 
-const cyclicDescriptor = (
-  op0: BoundAtom,
-  option: CyclicLayoutOption,
-  op1: BoundAtom
-): string => {
-  return `${op0.name} ${option} ${op1.name}`;
-};
-
-type Footprint = UnboundConcrete;
-
-const toFootprint = (uC: UnboundConcrete): Footprint => {
+const toFootprints = (uC: UnboundConcrete): Footprint[] => {
   if (uC.tag === 'BinaryLayout') {
     const { option, op0, op1 } = uC;
     const [orderedOp0, orderedOp1] =
       op0.name < op1.name ? [op0, op1] : [op1, op0];
     if (uC.option === 'Below') {
-      return {
-        ...uC,
-        option: 'Above',
-        op0: op1,
-        op1: op0,
-      };
+      return [
+        {
+          ...uC,
+          option: 'Above',
+          op0: op1,
+          op1: op0,
+        },
+      ];
     } else if (uC.option === 'RightOf') {
-      return {
-        ...uC,
-        option: 'LeftOf',
-        op0: op1,
-        op1: op0,
-      };
-    } else if (uC.option === 'DirectlyBelow') {
-      return {
-        ...uC,
-        option: 'DirectlyAbove',
-        op0: op1,
-        op1: op0,
-      };
-    } else if (uC.option === 'DirectlyRightOf') {
-      return {
-        ...uC,
-        option: 'DirectlyLeftOf',
-        op0: op1,
-        op1: op0,
-      };
+      return [
+        {
+          ...uC,
+          option: 'LeftOf',
+          op0: op1,
+          op1: op0,
+        },
+      ];
     } else if (uC.option === 'HorizontallyAligned') {
-      return {
-        ...uC,
-        option: 'HorizontallyAligned',
-        op0: orderedOp0,
-        op1: orderedOp1,
-      };
+      return [
+        {
+          ...uC,
+          option: 'HorizontallyAligned',
+          op0: orderedOp0,
+          op1: orderedOp1,
+        },
+      ];
     } else if (uC.option === 'VerticallyAligned') {
-      return {
-        ...uC,
-        option: 'VerticallyAligned',
-        op0: orderedOp0,
-        op1: orderedOp1,
-      };
+      return [
+        {
+          ...uC,
+          option: 'VerticallyAligned',
+          op0: orderedOp0,
+          op1: orderedOp1,
+        },
+      ];
+    } else if (uC.option === 'DirectlyAbove') {
+      return [
+        ...toFootprints({
+          ...uC,
+          option: 'Above',
+          op0,
+          op1,
+        }),
+        ...toFootprints({
+          ...uC,
+          option: 'VerticallyAligned',
+          op0,
+          op1,
+        }),
+      ];
+    } else if (uC.option === 'DirectlyBelow') {
+      return [
+        ...toFootprints({
+          ...uC,
+          option: 'Below',
+          op0,
+          op1,
+        }),
+        ...toFootprints({
+          ...uC,
+          option: 'VerticallyAligned',
+          op0,
+          op1,
+        }),
+      ];
+    } else if (uC.option === 'DirectlyLeftOf') {
+      return [
+        ...toFootprints({
+          ...uC,
+          option: 'LeftOf',
+          op0,
+          op1,
+        }),
+        ...toFootprints({
+          ...uC,
+          option: 'HorizontallyAligned',
+          op0,
+          op1,
+        }),
+      ];
+    } else if (uC.option === 'DirectlyRightOf') {
+      return [
+        ...toFootprints({
+          ...uC,
+          option: 'RightOf',
+          op0,
+          op1,
+        }),
+        ...toFootprints({
+          ...uC,
+          option: 'HorizontallyAligned',
+          op0,
+          op1,
+        }),
+      ];
     } else {
-      return uC;
+      return [
+        {
+          ...uC,
+          option: uC.option, // hack, why?
+        },
+      ];
     }
   } else {
-    return uC;
+    return [uC];
   }
 };
 
-type InferredConcrete = {
+type TerminalConcreteResult = {
   inferred: BoundConcrete;
   footprints: Footprint[];
   confidence: number;
 };
 
 const checkTerminalConcrete = (
-  concrete: UnaryLayout<BoundAtom> | BinaryLayout<BoundAtom>,
+  concrete: BoundConcrete,
   substs: AbstractLayoutSubst[],
   diagram: AbstractDiagram
-): InferredConcrete | undefined => {
+): TerminalConcreteResult | undefined => {
   const THRESHOLD = 0.85;
 
-  const unboundConcretes: ConcreteLayout<UnboundAtom>[] = substs.map(s =>
-    applySubstitution(concrete, s, 'not-used')
-  );
+  const unboundConcretes: UnboundConcrete[] = substs.map(s => {
+    return applySubstitution(concrete, s, 'not-used');
+  });
 
   const confs: number[] = unboundConcretes.map(uC =>
     confidenceOfConcrete(uC, diagram)
@@ -142,7 +201,7 @@ const checkTerminalConcrete = (
   if (satisfied) {
     return {
       inferred: concrete,
-      footprints: unboundConcretes.map(toFootprint),
+      footprints: unboundConcretes.map(toFootprints).flat(),
       confidence: compoundConf,
     };
   } else {
@@ -154,15 +213,14 @@ const getSatisfyingBoundConcretes = (
   env: TypeEnv,
   substs: AbstractLayoutSubst[],
   diagram: AbstractDiagram
-): InferredConcrete[] => {
+): TerminalConcreteResult[] => {
   const vars = Object.keys(env);
   if (vars.length === 0) {
     return [];
   }
 
-  const concretes: InferredConcrete[] = [];
+  const results: TerminalConcreteResult[] = [];
 
-  // unaries
   for (const unaryOption of UnaryLayoutOptions) {
     for (const varname of vars) {
       const concrete: ConcreteLayout<BoundAtom> = {
@@ -173,12 +231,10 @@ const getSatisfyingBoundConcretes = (
       };
       const checked = checkTerminalConcrete(concrete, substs, diagram);
       if (checked !== undefined) {
-        concretes.push(checked);
+        results.push(checked);
       }
     }
   }
-
-  // const consideredBinaryDescriptors: string[] = [];
   for (const binaryOption of BinaryLayoutOptions) {
     for (const v0 of vars) {
       for (const v1 of vars) {
@@ -192,11 +248,8 @@ const getSatisfyingBoundConcretes = (
           };
           const checked = checkTerminalConcrete(concrete, substs, diagram);
           if (checked !== undefined) {
-            concretes.push(checked);
+            results.push(checked);
           }
-          // consideredBinaryDescriptors.push(
-          //   binaryDescriptor(concrete.op0, concrete.option, concrete.op1)
-          // );
         }
       }
     }
@@ -205,7 +258,7 @@ const getSatisfyingBoundConcretes = (
   // ignore cyclic layouts for now
   // ignore group layouts for now
 
-  return concretes;
+  return results;
 };
 
 type InferredAbstractLayout = {
@@ -253,9 +306,9 @@ const composeAbstractLayoutHelper = (
 
 const composeAbstractLayout = (
   selectors: Selector[],
-  inferredConcrete: InferredConcrete
+  concreteResult: TerminalConcreteResult
 ): InferredAbstractLayout => {
-  const { inferred: concrete, footprints, confidence } = inferredConcrete;
+  const { inferred: concrete, footprints, confidence } = concreteResult;
   return {
     inferred: composeAbstractLayoutHelper(selectors, concrete),
     confidence,
@@ -289,11 +342,7 @@ const genSigSelectors = (
   return sss;
 };
 
-const genPredSelectors = (
-  model: Model,
-  typeEnv: TypeEnv,
-  numVarsAvailable: number
-): PredSelector[] => {
+const genPredSelectors = (model: Model, typeEnv: TypeEnv): PredSelector[] => {
   const sigVarnamesMap: Map<string, string[]> = new Map();
   for (const [varname, sig] of Object.entries(typeEnv)) {
     const existing = sigVarnamesMap.get(sig);
@@ -423,7 +472,7 @@ const genAbstractLayoutsHelper = (
   const thisGeneratedSelectors =
     thisSelectorType === 'sig'
       ? genSigSelectors(model, typeEnv, numVarsAvailable)
-      : genPredSelectors(model, typeEnv, numVarsAvailable);
+      : genPredSelectors(model, typeEnv);
 
   for (const s of thisGeneratedSelectors) {
     for (const next of nextSelectorTypes) {

@@ -10,11 +10,7 @@ import {
   CyclicLayout,
   GroupingLayout,
 } from '../concrete/ConcreteLayout';
-import {
-  Model,
-  simpleModel,
-  simpleCycleModel,
-} from '../../model_instance/Model';
+import { Model, simpleCycleModel } from '../../model_instance/Model';
 import { BOUND } from '../../inference/NaiveInference';
 
 export type Selector = SigSelector | PredSelector;
