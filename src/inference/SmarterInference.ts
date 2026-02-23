@@ -2,6 +2,7 @@ import {
   AbstractLayout,
   PredSelector,
   prettyAbstractLayout,
+  prettySelector,
   Selector,
   SigSelector,
 } from '../constraint_language/abstract/AbstractLayout';
@@ -181,8 +182,7 @@ const checkTerminalConcrete = (
   substs: AbstractLayoutSubst[],
   diagram: AbstractDiagram
 ): TerminalConcreteResult | undefined => {
-  const THRESHOLD = 0.85;
-
+  const THRESHOLD = 0.9;
   const unboundConcretes: UnboundConcrete[] = substs.map(s => {
     return applySubstitution(concrete, s, 'not-used');
   });
@@ -229,6 +229,7 @@ const getSatisfyingBoundConcretes = (
         separation: { tag: 'NoneSpecified' },
         option: unaryOption,
       };
+
       const checked = checkTerminalConcrete(concrete, substs, diagram);
       if (checked !== undefined) {
         results.push(checked);
@@ -448,6 +449,7 @@ const genAbstractLayoutsHelper = (
       model,
       instance
     );
+
     const inferredConcretes = getSatisfyingBoundConcretes(
       typeEnv,
       substs,
@@ -459,7 +461,9 @@ const genAbstractLayoutsHelper = (
         [...sigSelectors, ...predSelectors],
         inferredConcrete
       );
-      addAbstractLayout(footprintAbstractLayoutMap, a);
+
+      let b = a;
+      addAbstractLayout(footprintAbstractLayoutMap, b);
     }
     return;
   }

@@ -11,11 +11,14 @@ import {
 } from '../constraint_language/concrete/ConcreteLayout';
 import { ConcreteLayoutApplier } from '../constraint_language/concrete/ApplyConcreteLayout';
 import { AbstractDiagram } from '../inference/ConfidenceScore';
+import { AbstractLayout } from '../constraint_language/abstract/AbstractLayout';
+import { compileAbstractLayouts } from '../constraint_language/abstract/ApplyAbstractLayout';
+import { disjoint } from '@penrose/bloom/dist/core/constraints';
 
 const buildDiagram = async (
   model: Model,
   instance: Instance,
-  layout: ConcreteLayout<UnboundAtom>[]
+  layout: AbstractLayout[]
 ) => {
   const db = new InstanceDiagramBuilder(canvas(500, 400), 'instance', 5000);
   const {
@@ -28,6 +31,7 @@ const buildDiagram = async (
     group,
     rectangle,
     input,
+    ensure,
   } = db.getBloomBuilder();
 
   rectangle({
@@ -81,18 +85,26 @@ const buildDiagram = async (
     });
   }
 
+  for (const substance1 of db.atomSubstanceMap.values()) {
+    for (const substance2 of db.atomSubstanceMap.values()) {
+      if (substance1 !== substance2) {
+        ensure(disjoint(substance1.icon, substance2.icon));
+      }
+    }
+  }
+
   for (const [predName, bloomPred] of db.predicateMap) {
     // hack for demo
     const col =
       predName === 'NextSegment'
         ? bloom.rgba(1, 0, 0, 1) // red
         : predName === 'TrackSegment'
-        ? bloom.rgba(0, 0, 1, 1) // blue
-        : predName === 'TransponderOnSegment'
-        ? bloom.rgba(0, 0.6, 0, 1) // green
-        : predName === 'TrainOnSegment'
-        ? bloom.rgba(0.6, 0.8, 0.2, 1) // yellow
-        : bloom.rgba(0, 0, 0, 1); // black
+          ? bloom.rgba(0, 0, 1, 1) // blue
+          : predName === 'TransponderOnSegment'
+            ? bloom.rgba(0, 0.6, 0, 1) // green
+            : predName === 'TrainOnSegment'
+              ? bloom.rgba(0.6, 0.8, 0.2, 1) // yellow
+              : bloom.rgba(0, 0, 0, 1); // black
 
     const sigs = model.predicates.find(pred => pred.name === predName)!.sigs;
     const bloomTypesOfSigs = sigs.map(sig => db.sigTypeMap.get(sig)!);
@@ -147,16 +159,24 @@ const buildDiagram = async (
           start: [start[0], start[1]],
           end: [end[0], end[1]],
         });
+        const middle = bloom.ops.vdiv(bloom.ops.vadd(start, end), 2);
+        text({
+          string: predName,
+          center: [middle[0], middle[1]],
+          fillColor: bloom.rgba(1, 0, 0, 1),
+        });
       }
     );
   }
 
-  // const layoutApplier = new ConcreteLayoutApplier(db);
-  // for (const concreteLayout of layout) {
-  //   layoutApplier.stageConcreteLayout(concreteLayout);
-  // }
+  const concreteLayouts = compileAbstractLayouts(layout, model, instance);
 
-  // layoutApplier.applyStagedLayouts();
+  const layoutApplier = new ConcreteLayoutApplier(db);
+  for (const concreteLayout of concreteLayouts) {
+    layoutApplier.stageConcreteLayout(concreteLayout);
+  }
+
+  layoutApplier.applyStagedLayouts();
 
   return db.getBloomBuilder().build();
 };
@@ -164,18 +184,18 @@ const buildDiagram = async (
 export const Diagram = ({
   model,
   instance,
-  layout,
+  layoutProgram,
   setAbstractDiagram,
 }: {
   model: Model;
   instance: Instance;
-  layout: ConcreteLayout<UnboundAtom>[];
+  layoutProgram: AbstractLayout[];
   setAbstractDiagram: (d: AbstractDiagram) => void;
 }) => {
   const diagram = bloom.useDiagram(
     useCallback(
-      () => buildDiagram(model, instance, layout),
-      [model, instance, layout]
+      () => buildDiagram(model, instance, layoutProgram),
+      [model, instance, layoutProgram]
     )
   );
 

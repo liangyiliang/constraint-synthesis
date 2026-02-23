@@ -27,7 +27,9 @@ export type PredSelector = {
   args: string[];
 };
 
-const prettySelector = (selector: SigSelector | PredSelector): string => {
+export const prettySelector = (
+  selector: SigSelector | PredSelector
+): string => {
   if (selector.tag === 'SigSelector') {
     const { varname, sig } = selector;
     return `${varname} : ${sig}`;

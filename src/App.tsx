@@ -1,5 +1,5 @@
 import './App.css';
-import { InstanceVisualizer } from './components/InstanceVisualizer';
+import { MultiInstanceSynthesis } from './components/MultiInstanceSynthesis';
 
 function App() {
   return (
@@ -8,7 +8,7 @@ function App() {
         <h1>Constraint Synthesis</h1>
       </header>
       <main>
-        <InstanceVisualizer />
+        <MultiInstanceSynthesis />
       </main>
     </div>
   );

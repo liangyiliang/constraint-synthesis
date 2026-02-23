@@ -50,7 +50,7 @@ const binaryConcreteConfidenceFn: Record<
     const { x: x1, y: y1 } = pos1;
     const diff = x0 - x1;
     // diff < 0 => x0 - x1 < 0 => x0 < x1 => good
-    return modifiedSigmoid(diff, -50, 0.1, true);
+    return modifiedSigmoid(diff, -25, 0.2, true);
   },
   RightOf: (pos0, pos1) => {
     // 0 is to the right of 1
@@ -58,7 +58,7 @@ const binaryConcreteConfidenceFn: Record<
     const { x: x1, y: y1 } = pos1;
     const diff = x0 - x1;
     // diff > 0 => x0 - x1 > 0 => x0 > x1 => good
-    return modifiedSigmoid(diff, 50, 0.1, false);
+    return modifiedSigmoid(diff, 25, 0.2, false);
   },
   Above: (pos0, pos1) => {
     // 0 is above 1
@@ -66,7 +66,7 @@ const binaryConcreteConfidenceFn: Record<
     const { x: x1, y: y1 } = pos1;
     const diff = y0 - y1;
     // diff > 0 => y0 - y1 > 0 => y0 > y1 => good
-    return modifiedSigmoid(diff, 25, 0.1, false);
+    return modifiedSigmoid(diff, 25, 0.2, false);
   },
   Below: (pos0, pos1) => {
     // 0 is below 1
@@ -74,7 +74,7 @@ const binaryConcreteConfidenceFn: Record<
     const { x: x1, y: y1 } = pos1;
     const diff = y0 - y1;
     // diff < 0 => y0 - y1 < 0 => y0 < y1 => good
-    return modifiedSigmoid(diff, -25, 0.1, true);
+    return modifiedSigmoid(diff, -25, 0.2, true);
   },
   DirectlyLeftOf: (pos0, pos1) => {
     return (

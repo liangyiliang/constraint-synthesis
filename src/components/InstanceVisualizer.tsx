@@ -14,8 +14,8 @@ import { RailwayInstance, RailwayModel } from '../examples/Railway';
 import { SimpleInstance, SimpleModel } from '../examples/Simple';
 
 export const InstanceVisualizer = () => {
-  const [model, setModel] = useState<Model>(RailwayModel());
-  const [instance, setInstance] = useState<Instance>(RailwayInstance());
+  const [model, setModel] = useState<Model>(SimpleModel());
+  const [instance, setInstance] = useState<Instance>(SimpleInstance());
   const [abstractDiagram, setAbstractDiagram] = useState<AbstractDiagram>({});
 
   return (
@@ -31,7 +31,7 @@ export const InstanceVisualizer = () => {
           <Diagram
             model={model}
             instance={instance}
-            layout={[]}
+            layoutProgram={[]}
             setAbstractDiagram={setAbstractDiagram}
           />
         ),

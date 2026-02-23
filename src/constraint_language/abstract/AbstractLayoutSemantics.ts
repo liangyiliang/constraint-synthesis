@@ -14,51 +14,33 @@ import { Selector } from './AbstractLayout';
  * Maps (tuples of) selector varnames into (tuples of) atom.
  */
 export class SelectorEnv {
-  private map: Map<string, string[]>;
+  private map: [string, string[]][];
 
   constructor() {
-    this.map = new Map();
+    this.map = [];
   }
 
-  private toDescriptor(key: string): string;
-  private toDescriptor(key: string[]): string;
-  private toDescriptor(key: string[] | string): string;
-  private toDescriptor(key: string[] | string): string {
-    if (Array.isArray(key)) {
-      return key.join('::');
-    }
-    return key;
+  add(varnames: string[], atoms: string[][]): void {
+    const varnamesDesc = this.toDescriptor(varnames);
+    const atomsDescs = atoms.map(this.toDescriptor);
+    this.map.push([varnamesDesc, atomsDescs]);
   }
 
+  private toDescriptor(v: string[]): string {
+    return v.join('::');
+  }
   private fromDescriptor(desc: string): string[] {
     return desc.split('::');
   }
 
-  add(key: string, value: string): void;
-  add(key: string[], value: string[]): void;
-  add(key: string | string[], value: string | string[]): void {
-    const keyDesc = this.toDescriptor(key);
-    if (!this.map.has(keyDesc)) {
-      this.map.set(keyDesc, []);
-    }
-    const valueDesc = this.toDescriptor(value);
-    this.map.get(keyDesc)?.push(valueDesc);
-  }
-
   toSubstitutions(): AbstractLayoutSubst[] {
-    const entries = Array.from(this.map.entries()).map(([k, v]) => ({
-      varnamesDesc: k,
-      possibleMatchesDesc: v,
-    }));
-
-    const possibleMatchesDescs = entries.map(e => e.possibleMatchesDesc);
-    const prod = cartesianProduct(possibleMatchesDescs);
-
-    const varnamesDescs = entries.map(e => e.varnamesDesc);
+    const varnames = this.map.map(([k]) => this.fromDescriptor(k));
+    const matches = this.map.map(([, v]) => v.map(this.fromDescriptor));
+    const prod = cartesianProduct(matches);
 
     const substs: AbstractLayoutSubst[] = [];
     for (const entry of prod) {
-      const subst = this.buildSubst(varnamesDescs, entry);
+      const subst = this.buildSubst(varnames, entry);
       if (subst === undefined) {
         continue; // Invalid substitution, skip
       }
@@ -69,26 +51,34 @@ export class SelectorEnv {
   }
 
   private buildSubst(
-    varnamesDescs: string[],
-    matchesDescs: string[]
+    varnames: string[][],
+    potentialMatch: string[][]
   ): AbstractLayoutSubst | undefined {
-    if (varnamesDescs.length !== matchesDescs.length) {
+    if (varnames.length !== potentialMatch.length) {
       throw new Error(
-        `varnamesDescs = ${varnamesDescs}, matchesDescs = ${matchesDescs}, length mismatch`
+        `varnames = ${varnames}, potentialMatch = ${potentialMatch}, length mismatch`
       );
     }
 
-    const varnames = varnamesDescs.flatMap(desc => this.fromDescriptor(desc));
-    const matches = matchesDescs.flatMap(desc => this.fromDescriptor(desc));
-
     const subst: AbstractLayoutSubst = {};
     for (let i = 0; i < varnames.length; i++) {
-      const varname = varnames[i];
-      const match = matches[i];
-      if (varname in subst && subst[varname] !== match) {
-        return undefined; // Conflict in substitution, invalid substitution
+      const vars = varnames[i];
+      const atoms = potentialMatch[i];
+      if (vars.length !== atoms.length) {
+        throw new Error(`vars = ${vars}, atoms = ${atoms}, length mismatch`);
       }
-      subst[varnames[i]] = matches[i];
+      for (let j = 0; j < vars.length; j++) {
+        const v = vars[j];
+        const a = atoms[j];
+        if (v in subst) {
+          if (subst[v] !== a) {
+            // Conflict in substitution
+            return undefined;
+          }
+        } else {
+          subst[v] = a;
+        }
+      }
     }
     return subst;
   }
@@ -113,7 +103,8 @@ const selectorsToSubstsHelper = (
   env: SelectorEnv
 ): AbstractLayoutSubst[] => {
   if (selectors.length === 0) {
-    return env.toSubstitutions();
+    const res = env.toSubstitutions();
+    return res;
   }
 
   const [selector, ...rest] = selectors;
@@ -123,8 +114,13 @@ const selectorsToSubstsHelper = (
     const atomNames = instance.atoms
       .filter(atom => atom.type === sig)
       .map(atom => atom.name);
-    for (const atomName of atomNames) {
-      env.add(varname, atomName);
+    if (atomNames.length === 0) {
+      return [];
+    } else {
+      env.add(
+        [varname],
+        atomNames.map(name => [name])
+      );
     }
   } else {
     const { pred, args } = selector;
@@ -132,13 +128,10 @@ const selectorsToSubstsHelper = (
       p => p.predicateName === pred
     );
     const tuples = predicates.map(p => p.args);
-    for (const tuple of tuples) {
-      if (args.length !== tuple.length) {
-        throw new Error(
-          `Selector ${pred} expects ${args.length} args, but got ${tuple.length}`
-        );
-      }
-      env.add(args, tuple);
+    if (tuples.length === 0) {
+      return [];
+    } else {
+      env.add(args, tuples);
     }
   }
 

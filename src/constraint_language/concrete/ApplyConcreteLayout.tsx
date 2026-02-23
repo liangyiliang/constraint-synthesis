@@ -171,7 +171,7 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? bloom.constraints.lessThan(
               bloomShape0.center[0],
-              bloomShape1.center[0]
+              bloom.sub(bloomShape1.center[0], 50)
             )
           : sep.tag === 'AtLeast'
           ? bloom.constraints.lessThan(
@@ -197,7 +197,7 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? bloom.constraints.greaterThan(
               bloomShape0.center[0],
-              bloomShape1.center[0]
+              bloom.add(bloomShape1.center[0], 50)
             )
           : sep.tag === 'AtLeast'
           ? bloom.constraints.greaterThan(
@@ -223,7 +223,7 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? bloom.constraints.greaterThan(
               bloomShape0.center[1],
-              bloomShape1.center[1]
+              bloom.add(bloomShape1.center[1], 50)
             )
           : sep.tag === 'AtLeast'
           ? bloom.constraints.greaterThan(
@@ -249,7 +249,7 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? bloom.constraints.lessThan(
               bloomShape0.center[1],
-              bloomShape1.center[1]
+              bloom.sub(bloomShape1.center[1], 50)
             )
           : sep.tag === 'AtLeast'
           ? bloom.constraints.lessThan(
