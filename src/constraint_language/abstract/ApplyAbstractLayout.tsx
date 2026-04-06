@@ -1,11 +1,7 @@
 import { emptyInstance, Instance } from '../../model_instance/Instance';
 import { emptyModel, Model } from '../../model_instance/Model';
 import { InstanceDiagramBuilder } from '../../diagram/InstanceDiagramBuilder';
-import {
-  AbstractLayout,
-  prettyAbstractLayout,
-  Selector,
-} from './AbstractLayout';
+import { AbstractLayout, prettyClause, Selector } from './AbstractLayout';
 import { ConcreteLayoutApplier } from '../concrete/ApplyConcreteLayout';
 import {
   BinaryLayout,

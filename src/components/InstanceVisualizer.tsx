@@ -5,7 +5,7 @@ import ModelInstanceLoader from './ModelInstanceLoader';
 import { Diagram } from './Diagram';
 import { AbstractLayout } from '../constraint_language/abstract/AbstractLayout';
 import { editorStyle } from './style';
-import { AbstractDiagram } from '../inference/ConfidenceScore';
+import { AbstractDiagram } from '../inference/multi_instance/confidences/ConfidenceScore';
 import {
   genAbstractLayouts,
   prettyInferredAbstractLayout,

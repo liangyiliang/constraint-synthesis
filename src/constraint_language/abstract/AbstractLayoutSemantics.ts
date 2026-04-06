@@ -5,6 +5,7 @@ import {
   BinaryLayout,
   BoundAtom,
   ConcreteLayout,
+  CyclicLayout,
   UnaryLayout,
   UnboundAtom,
 } from '../concrete/ConcreteLayout';
@@ -84,6 +85,7 @@ export class SelectorEnv {
   }
 }
 
+// Maps a varname into an atom name
 export type AbstractLayoutSubst = Record<string, string>;
 
 export const selectorsToSubsts = (
@@ -153,6 +155,11 @@ export function applySubstitution(
   subst: AbstractLayoutSubst,
   id: string
 ): UnaryLayout<UnboundAtom> | BinaryLayout<UnboundAtom>;
+export function applySubstitution(
+  layout: CyclicLayout<BoundAtom>,
+  subst: AbstractLayoutSubst,
+  id: string
+): CyclicLayout<UnboundAtom>;
 export function applySubstitution(
   layout: ConcreteLayout<BoundAtom>,
   subst: AbstractLayoutSubst,

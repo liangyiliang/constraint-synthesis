@@ -48,7 +48,13 @@ type ExactSeparationOption = {
   distance: number;
 };
 
-export type AtomInConstraint = UnboundAtom | BoundAtom;
+export type AtomInConstraint = UnboundAtom | BoundAtom | InstancedUnboundAtom;
+
+export type InstancedUnboundAtom = {
+  tag: 'InstancedUnboundAtom';
+  name: string;
+  instanceId: number;
+};
 
 export type UnboundAtom = {
   tag: 'UnboundAtom';
@@ -109,21 +115,34 @@ const prettySeparation = (s: SeparationOption): string => {
   }
 };
 
+export const prettyAtomInConstraint = (a: AtomInConstraint): string => {
+  switch (a.tag) {
+    case 'UnboundAtom':
+      return a.name;
+    case 'BoundAtom':
+      return a.name;
+    case 'InstancedUnboundAtom':
+      return `inst${a.instanceId}_${a.name}`;
+  }
+};
+
 export const prettyConcreteLayout = <T extends AtomInConstraint>(
   l: ConcreteLayout<T>
 ): string => {
   if (l.tag === 'BinaryLayout') {
     return (
-      `${l.op0.name} ${l.option} ${l.op1.name}` + prettySeparation(l.separation)
+      `${prettyAtomInConstraint(l.op0)} ${l.option} ${prettyAtomInConstraint(l.op1)}` +
+      prettySeparation(l.separation)
     );
   } else if (l.tag === 'UnaryLayout') {
-    return `${l.op.name} ${l.option}` + prettySeparation(l.separation);
-  } else if (l.tag === 'CyclicLayout') {
     return (
-      `Cycle ${l.op0.name} ${l.option} ${l.op1.name}` +
-      (l.cycleId === undefined ? '' : ` (id ${l.cycleId})`)
+      `${prettyAtomInConstraint(l.op)} ${l.option}` +
+      prettySeparation(l.separation)
     );
+  } else if (l.tag === 'CyclicLayout') {
+    return `Cycle ${prettyAtomInConstraint(l.op0)} ${l.option} ${prettyAtomInConstraint(l.op1)}`;
+    // (l.cycleId === undefined ? '' : ` (id ${l.cycleId})`)
   } else {
-    return `Group ${l.op.name} (id ${l.groupId})`;
+    return `Group ${prettyAtomInConstraint(l.op)} (id ${l.groupId})`;
   }
 };

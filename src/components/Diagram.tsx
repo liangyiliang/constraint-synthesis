@@ -1,6 +1,6 @@
 import { DiagramBuilder, Renderer, canvas } from '@penrose/bloom';
 import * as bloom from '@penrose/bloom';
-import { useCallback, useState } from 'react';
+import React, { ForwardedRef, useCallback, useState } from 'react';
 import { Model } from '../model_instance/Model';
 import { Instance } from '../model_instance/Instance';
 import { isArrayLiteralExpression } from 'typescript';
@@ -10,17 +10,20 @@ import {
   UnboundAtom,
 } from '../constraint_language/concrete/ConcreteLayout';
 import { ConcreteLayoutApplier } from '../constraint_language/concrete/ApplyConcreteLayout';
-import { AbstractDiagram } from '../inference/ConfidenceScore';
 import { AbstractLayout } from '../constraint_language/abstract/AbstractLayout';
 import { compileAbstractLayouts } from '../constraint_language/abstract/ApplyAbstractLayout';
 import { disjoint } from '@penrose/bloom/dist/core/constraints';
+import { AbstractDiagram } from '../inference/multi_instance/inputs/Inputs';
 
 const buildDiagram = async (
   model: Model,
   instance: Instance,
-  layout: AbstractLayout[]
+  layout: AbstractLayout[],
+  interactive: boolean,
+  freezeInitially: AbstractDiagram | undefined,
+  seed: string = 'instance'
 ) => {
-  const db = new InstanceDiagramBuilder(canvas(500, 400), 'instance', 5000);
+  const db = new InstanceDiagramBuilder(canvas(500, 400), seed, 5000);
   const {
     forall,
     text,
@@ -39,6 +42,7 @@ const buildDiagram = async (
     width: 500,
     height: 400,
     strokeColor: bloom.rgba(0, 0, 0, 1),
+    fillColor: bloom.rgba(1, 1, 1, 1),
     strokeWidth: 1,
   });
 
@@ -60,18 +64,26 @@ const buildDiagram = async (
 
   for (const [sig, bloomType] of db.sigTypeMap) {
     forall({ p: bloomType }, ({ p }) => {
+      const xname = `x_${p.name}`;
+      const yname = `y_${p.name}`;
+
+      const xinit = freezeInitially?.[p.name]?.x ?? undefined;
+      const yinit = freezeInitially?.[p.name]?.y ?? undefined;
+
       const cx = input({
-        name: `x_${p.name}`,
+        name: xname,
         optimized: true,
+        init: xinit,
       });
       const cy = input({
-        name: `y_${p.name}`,
+        name: yname,
         optimized: true,
+        init: yinit,
       });
       p.icon = circle({
         center: [cx, cy],
         r: 25,
-        drag: true,
+        drag: interactive,
         fillColor: bloom.rgba(1, 0.8, 0, 1),
         strokeColor: bloom.rgba(0, 0, 0, 1),
         strokeWidth: 2,
@@ -169,64 +181,108 @@ const buildDiagram = async (
     );
   }
 
-  const concreteLayouts = compileAbstractLayouts(layout, model, instance);
+  if (freezeInitially === undefined) {
+    const concreteLayouts = compileAbstractLayouts(layout, model, instance);
 
-  const layoutApplier = new ConcreteLayoutApplier(db);
-  for (const concreteLayout of concreteLayouts) {
-    layoutApplier.stageConcreteLayout(concreteLayout);
+    const layoutApplier = new ConcreteLayoutApplier(db);
+    for (const concreteLayout of concreteLayouts) {
+      layoutApplier.stageConcreteLayout(concreteLayout);
+    }
+
+    layoutApplier.applyStagedLayouts();
   }
-
-  layoutApplier.applyStagedLayouts();
 
   return db.getBloomBuilder().build();
 };
 
-export const Diagram = ({
-  model,
-  instance,
-  layoutProgram,
-  setAbstractDiagram,
-}: {
-  model: Model;
-  instance: Instance;
-  layoutProgram: AbstractLayout[];
-  setAbstractDiagram: (d: AbstractDiagram) => void;
-}) => {
+// disable layout programs
+// enable optimization
+// set previous diagram
+
+const TheComponent = (
+  {
+    model,
+    instance,
+    layoutProgram,
+    interactive,
+    freezeInitially,
+  }: {
+    model: Model;
+    instance: Instance;
+    layoutProgram: AbstractLayout[];
+    interactive: boolean;
+    freezeInitially: AbstractDiagram | undefined;
+  },
+  ref: ForwardedRef<{
+    getAbstractDiagram: () => AbstractDiagram;
+    setAbstractDiagram: (absDiag: AbstractDiagram) => void;
+    // setOptimized: (optimized: boolean) => void;
+  }>
+) => {
+  const [seed, setSeed] = useState(0);
+
   const diagram = bloom.useDiagram(
     useCallback(
-      () => buildDiagram(model, instance, layoutProgram),
-      [model, instance, layoutProgram]
+      () =>
+        buildDiagram(
+          model,
+          instance,
+          layoutProgram,
+          interactive,
+          freezeInitially,
+          `${seed}`
+        ),
+      [model, instance, layoutProgram, interactive, freezeInitially, seed]
     )
   );
+  const getAbstractDiagram = (): AbstractDiagram => {
+    try {
+      const absDiag: AbstractDiagram = {};
+      for (const atom of instance.atoms) {
+        const cx = diagram?.getInput(`x_${atom.name}`);
+        const cy = diagram?.getInput(`y_${atom.name}`);
+        if (cx === undefined || cy === undefined) {
+          throw new Error(
+            `Could not find inputs for atom ${atom.name}: cx=${cx}, cy=${cy}`
+          );
+        }
+        absDiag[atom.name] = {
+          x: cx,
+          y: cy,
+        };
+      }
+      console.log('Extracted abstract diagram:', absDiag);
+      return absDiag;
+    } catch (error) {
+      console.error('Error extracting diagram:', error);
+      return {};
+    }
+  };
+
+  const setAbstractDiagram = (absDiag: AbstractDiagram) => {
+    console.log('Setting absdiag into:');
+    console.log(absDiag);
+    for (const atom of instance.atoms) {
+      const atomName = atom.name;
+      const cx = absDiag[atomName].x;
+      const cy = absDiag[atomName].y;
+      diagram?.setInput(`x_${atomName}`, cx);
+      diagram?.setInput(`y_${atomName}`, cy);
+    }
+  };
+
+  React.useImperativeHandle(ref, () => ({
+    getAbstractDiagram,
+    setAbstractDiagram,
+    // setOptimized,
+  }));
 
   return (
-    <div>
+    <div style={{ width: '100%', height: '90%' }}>
       <Renderer diagram={diagram} />
-      <button
-        onClick={e => {
-          try {
-            const absDiag: AbstractDiagram = {};
-            for (const atom of instance.atoms) {
-              const cx = diagram?.getInput(`x_${atom.name}`);
-              const cy = diagram?.getInput(`y_${atom.name}`);
-              if (cx === undefined || cy === undefined) {
-                throw new Error(
-                  `Could not find inputs for atom ${atom.name}: cx=${cx}, cy=${cy}`
-                );
-              }
-              absDiag[atom.name] = {
-                x: cx,
-                y: cy,
-              };
-            }
-            setAbstractDiagram(absDiag);
-          } catch (error) {
-            console.error('Error setting diagram:', error);
-          }
-        }}
-      >
-        Set Diagram
-      </button>
+      <button onClick={() => setSeed(prev => prev + 1)}>Resample</button>
     </div>
   );
 };
+
+export const Diagram = React.forwardRef(TheComponent);

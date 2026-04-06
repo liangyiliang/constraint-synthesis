@@ -95,8 +95,8 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? bloom.constraints.greaterThan(shapeCenter[1], 0)
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.greaterThan(shapeCenter[1], sep.distance)
-          : bloom.constraints.equal(shapeCenter[1], sep.distance);
+            ? bloom.constraints.greaterThan(shapeCenter[1], sep.distance)
+            : bloom.constraints.equal(shapeCenter[1], sep.distance);
       ensure(constraint);
     },
     BelowCenter: (
@@ -111,8 +111,8 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? bloom.constraints.lessThan(shapeCenter[1], 0)
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.lessThan(shapeCenter[1], -sep.distance)
-          : bloom.constraints.equal(shapeCenter[1], -sep.distance);
+            ? bloom.constraints.lessThan(shapeCenter[1], -sep.distance)
+            : bloom.constraints.equal(shapeCenter[1], -sep.distance);
       ensure(constraint);
     },
     LeftOfCenter: (
@@ -127,8 +127,8 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? bloom.constraints.lessThan(shapeCenter[0], 0)
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.lessThan(shapeCenter[0], -sep.distance)
-          : bloom.constraints.equal(shapeCenter[0], -sep.distance);
+            ? bloom.constraints.lessThan(shapeCenter[0], -sep.distance)
+            : bloom.constraints.equal(shapeCenter[0], -sep.distance);
       ensure(constraint);
     },
     RightOfCenter: (
@@ -143,8 +143,8 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? bloom.constraints.greaterThan(shapeCenter[0], 0)
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.greaterThan(shapeCenter[0], sep.distance)
-          : bloom.constraints.equal(shapeCenter[0], sep.distance);
+            ? bloom.constraints.greaterThan(shapeCenter[0], sep.distance)
+            : bloom.constraints.equal(shapeCenter[0], sep.distance);
       ensure(constraint);
     },
   };
@@ -174,14 +174,14 @@ export class ConcreteLayoutApplier {
               bloom.sub(bloomShape1.center[0], 50)
             )
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.lessThan(
-              bloomShape0.center[0],
-              bloom.sub(bloomShape1.center[0], sep.distance)
-            )
-          : bloom.constraints.equal(
-              bloomShape0.center[0],
-              bloom.sub(bloomShape1.center[0], sep.distance)
-            );
+            ? bloom.constraints.lessThan(
+                bloomShape0.center[0],
+                bloom.sub(bloomShape1.center[0], sep.distance)
+              )
+            : bloom.constraints.equal(
+                bloomShape0.center[0],
+                bloom.sub(bloomShape1.center[0], sep.distance)
+              );
       ensure(constraint);
     },
     RightOf: (
@@ -200,14 +200,14 @@ export class ConcreteLayoutApplier {
               bloom.add(bloomShape1.center[0], 50)
             )
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.greaterThan(
-              bloomShape0.center[0],
-              bloom.add(bloomShape1.center[0], sep.distance)
-            )
-          : bloom.constraints.equal(
-              bloomShape0.center[0],
-              bloom.add(bloomShape1.center[0], sep.distance)
-            );
+            ? bloom.constraints.greaterThan(
+                bloomShape0.center[0],
+                bloom.add(bloomShape1.center[0], sep.distance)
+              )
+            : bloom.constraints.equal(
+                bloomShape0.center[0],
+                bloom.add(bloomShape1.center[0], sep.distance)
+              );
       ensure(constraint);
     },
     Above: (
@@ -226,14 +226,14 @@ export class ConcreteLayoutApplier {
               bloom.add(bloomShape1.center[1], 50)
             )
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.greaterThan(
-              bloomShape0.center[1],
-              bloom.add(bloomShape1.center[1], sep.distance)
-            )
-          : bloom.constraints.equal(
-              bloomShape0.center[1],
-              bloom.add(bloomShape1.center[1], sep.distance)
-            );
+            ? bloom.constraints.greaterThan(
+                bloomShape0.center[1],
+                bloom.add(bloomShape1.center[1], sep.distance)
+              )
+            : bloom.constraints.equal(
+                bloomShape0.center[1],
+                bloom.add(bloomShape1.center[1], sep.distance)
+              );
       ensure(constraint);
     },
     Below: (
@@ -252,14 +252,14 @@ export class ConcreteLayoutApplier {
               bloom.sub(bloomShape1.center[1], 50)
             )
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.lessThan(
-              bloomShape0.center[1],
-              bloom.sub(bloomShape1.center[1], sep.distance)
-            )
-          : bloom.constraints.equal(
-              bloomShape0.center[1],
-              bloom.sub(bloomShape1.center[1], sep.distance)
-            );
+            ? bloom.constraints.lessThan(
+                bloomShape0.center[1],
+                bloom.sub(bloomShape1.center[1], sep.distance)
+              )
+            : bloom.constraints.equal(
+                bloomShape0.center[1],
+                bloom.sub(bloomShape1.center[1], sep.distance)
+              );
       ensure(constraint);
     },
     VerticallyAligned: (
@@ -280,18 +280,18 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? 0
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.greaterThan(
-              bloom.abs(
-                bloom.sub(bloomShape0.center[1], bloomShape1.center[1])
-              ),
-              sep.distance
-            )
-          : bloom.constraints.equal(
-              bloom.abs(
-                bloom.sub(bloomShape0.center[1], bloomShape1.center[1])
-              ),
-              sep.distance
-            );
+            ? bloom.constraints.greaterThan(
+                bloom.abs(
+                  bloom.sub(bloomShape0.center[1], bloomShape1.center[1])
+                ),
+                sep.distance
+              )
+            : bloom.constraints.equal(
+                bloom.abs(
+                  bloom.sub(bloomShape0.center[1], bloomShape1.center[1])
+                ),
+                sep.distance
+              );
       ensure(separationConstraint);
     },
     HorizontallyAligned: (
@@ -312,18 +312,18 @@ export class ConcreteLayoutApplier {
         sep.tag === 'NoneSpecified'
           ? 0
           : sep.tag === 'AtLeast'
-          ? bloom.constraints.greaterThan(
-              bloom.abs(
-                bloom.sub(bloomShape0.center[0], bloomShape1.center[0])
-              ),
-              sep.distance
-            )
-          : bloom.constraints.equal(
-              bloom.abs(
-                bloom.sub(bloomShape0.center[0], bloomShape1.center[0])
-              ),
-              sep.distance
-            );
+            ? bloom.constraints.greaterThan(
+                bloom.abs(
+                  bloom.sub(bloomShape0.center[0], bloomShape1.center[0])
+                ),
+                sep.distance
+              )
+            : bloom.constraints.equal(
+                bloom.abs(
+                  bloom.sub(bloomShape0.center[0], bloomShape1.center[0])
+                ),
+                sep.distance
+              );
       ensure(separationConstraint);
     },
     DirectlyLeftOf: (
@@ -436,7 +436,10 @@ export class ConcreteLayoutApplier {
     }
 
     const cyclableNodes = graphlib.alg.topsort(graph);
-    this.layoutNodesInCircle(db, cyclableNodes);
+
+    if (cyclableNodes.length >= 3) {
+      this.layoutNodesInCircle(db, cyclableNodes);
+    }
   }
 
   private layoutNodesInCircle(
@@ -448,7 +451,7 @@ export class ConcreteLayoutApplier {
     );
 
     const bloomBuilder = db.getBloomBuilder();
-    const { circle, ensure, layer, input } = bloomBuilder;
+    const { circle, ensure, layer, input, encourage } = bloomBuilder;
 
     const makeInput = (init?: number) => input({ optimized: true, init });
 
@@ -479,19 +482,27 @@ export class ConcreteLayoutApplier {
       );
 
       const currentRadius = bloom.vdist(refCenter, shapes[i].center);
-      ensure(
-        bloom.constraints.equal(
-          bloom.sin(currentAngle),
-          bloom.sin(desiredAngle)
+      encourage(
+        bloom.mul(
+          bloom.objectives.equal(
+            bloom.sin(currentAngle),
+            bloom.sin(desiredAngle)
+          ),
+          1
         )
       );
-      ensure(
-        bloom.constraints.equal(
-          bloom.cos(currentAngle),
-          bloom.cos(desiredAngle)
+      encourage(
+        bloom.mul(
+          bloom.objectives.equal(
+            bloom.cos(currentAngle),
+            bloom.cos(desiredAngle)
+          ),
+          1
         )
       );
-      ensure(bloom.constraints.equal(currentRadius, refRadius));
+      encourage(
+        bloom.mul(bloom.objectives.equal(currentRadius, refRadius), 0.0001)
+      );
     }
   }
 }

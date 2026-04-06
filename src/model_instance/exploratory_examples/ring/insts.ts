@@ -97,11 +97,29 @@ const RingInst5: Instance = {
   ],
 };
 
+const RingInst6: Instance = {
+  atoms: [
+    { name: 'Node$0', type: 'this/Node' },
+    { name: 'Node$1', type: 'this/Node' },
+    { name: 'Node$2', type: 'this/Node' },
+    { name: 'Node$3', type: 'this/Node' },
+    { name: 'Node$4', type: 'this/Node' },
+  ],
+  predicates: [
+    { predicateName: 'succ', args: ['Node$0', 'Node$1'] },
+    { predicateName: 'succ', args: ['Node$1', 'Node$2'] },
+    { predicateName: 'succ', args: ['Node$2', 'Node$3'] },
+    { predicateName: 'succ', args: ['Node$3', 'Node$4'] },
+    { predicateName: 'succ', args: ['Node$4', 'Node$0'] },
+  ],
+};
+
 export const RingInsts: Instance[] = [
-  //RingInst0,
-  //RingInst1,
-  RingInst2,
-  //RingInst3,
-  //RingInst4,
-  RingInst5,
+  RingInst0,
+  RingInst1,
+  // RingInst2,
+  // RingInst3,
+  // RingInst4,
+  // RingInst5,
+  RingInst6,
 ];

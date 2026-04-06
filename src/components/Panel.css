@@ -1,0 +1,62 @@
+.container {
+  width: 90vw;
+  height: 90vh;
+  margin: 5vh auto;
+  border: 2px solid #000;
+  background: #fafafa;
+  position: relative;
+  box-sizing: border-box;
+  padding: 30px;
+  font-family: Arial, sans-serif;
+}
+
+.content {
+  width: 75%;
+  height: 90%;
+  background: #e0e0e0;
+  border: 2px solid #000;
+  margin: 0 auto;
+}
+
+.next-btn {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.bottom-buttons {
+  position: absolute;
+  bottom: 30px;
+  width: 100%;
+  display: flex;
+  justify-content: space-evenly;
+  left: 0;
+}
+
+.yes_button {
+  background: #00a000;
+  color: white;
+  border: 2px solid black;
+  padding: 12px 40px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.no_button {
+  background: #aa0000;
+  color: white;
+  border: 2px solid black;
+  padding: 12px 40px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.next_button {
+  background: #0000aa;
+  color: white;
+  border: 2px solid black;
+  padding: 12px 40px;
+  font-size: 18px;
+  cursor: pointer;
+}

@@ -1,7 +1,7 @@
 import {
   AbstractLayout,
   PredSelector,
-  prettyAbstractLayout,
+  prettyClause,
   prettySelector,
   Selector,
   SigSelector,
@@ -39,7 +39,7 @@ import {
   AbstractDiagram,
   computeConfidence,
   confidenceOfConcrete,
-} from './ConfidenceScore';
+} from './multi_instance/confidences/ConfidenceScore';
 
 type Footprint =
   | UnaryLayout<UnboundAtom>
@@ -273,7 +273,7 @@ export const prettyInferredAbstractLayout = (
   withConfidence: boolean = true
 ) => {
   const { inferred: abstractLayout, confidence } = inferred;
-  const str = prettyAbstractLayout(abstractLayout);
+  const str = prettyClause(abstractLayout);
   if (withConfidence) {
     return str + '; confidence = ' + confidence;
   } else {

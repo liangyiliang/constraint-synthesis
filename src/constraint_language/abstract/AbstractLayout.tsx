@@ -1,7 +1,7 @@
 import {
   BoundAtom,
   ConcreteLayout,
-  prettyConcreteLayout,
+  prettyConcreteLayout as prettyConcrete,
   BinaryLayoutOption,
   UnaryLayoutOption,
   SeparationOption,
@@ -45,12 +45,10 @@ export type AbstractLayout = {
   layout: AbstractLayout | ConcreteLayout<BoundAtom>;
 };
 
-export const prettyAbstractLayout = (layout: AbstractLayout): string => {
+export const prettyClause = (layout: AbstractLayout): string => {
   const { selector, layout: inner } = layout;
   const str = `IF ${prettySelector(selector)} THEN ${
-    inner.tag === 'AbstractLayout'
-      ? prettyAbstractLayout(inner)
-      : prettyConcreteLayout(inner)
+    inner.tag === 'AbstractLayout' ? prettyClause(inner) : prettyConcrete(inner)
   }`;
 
   if ('confidence' in layout) {

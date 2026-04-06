@@ -1,20 +1,16 @@
 import { log } from '@penrose/bloom';
-import { AbstractLayout } from '../constraint_language/abstract/AbstractLayout';
-import { compileAbstractLayouts } from '../constraint_language/abstract/ApplyAbstractLayout';
+import { AbstractLayout } from '../../../constraint_language/abstract/AbstractLayout';
+import { compileAbstractLayouts } from '../../../constraint_language/abstract/ApplyAbstractLayout';
 import {
   BinaryLayoutOption,
   ConcreteLayout,
+  CyclicLayout,
   UnboundAtom,
-} from '../constraint_language/concrete/ConcreteLayout';
-import { Instance } from '../model_instance/Instance';
-import { Model } from '../model_instance/Model';
-
-type Pos = {
-  x: number;
-  y: number;
-};
-
-export type AbstractDiagram = Record<string, Pos>;
+} from '../../../constraint_language/concrete/ConcreteLayout';
+import { Instance } from '../../../model_instance/Instance';
+import { Model } from '../../../model_instance/Model';
+import * as graphlib from '@dagrejs/graphlib';
+import { AbstractDiagram, Pos } from '../inputs/Inputs';
 
 const sigmoid = (x: number) => {
   return 1 / (1 + Math.exp(-x));
@@ -38,6 +34,14 @@ const modifiedSigmoid = (
 
 const unnormalizedGaussian = (x: number, mean: number, variance: number) => {
   return Math.exp((-(x - mean) * (x - mean)) / (2 * variance));
+};
+
+export const greaterThan = (a: number, b: number) => {
+  return modifiedSigmoid(a - b, -25, 0.2, false);
+};
+
+export const equal = (a: number, b: number) => {
+  return unnormalizedGaussian(a - b, 0, 1600);
 };
 
 const binaryConcreteConfidenceFn: Record<
@@ -154,37 +158,38 @@ export const confidenceOfConcrete = (
       return binaryConcreteConfidenceFn.RightOf(pos, { x: 0, y: 0 });
     }
   } else if (concrete.tag === 'CyclicLayout') {
-    // not implemented yet
-    return 0;
+    throw new Error(
+      'Cannot compute individual confidence score for cyclic layout; use confidenceOfCyclicLayout instead'
+    );
   } else {
     // not implemented yet
     return 0;
   }
 };
 
-export const computeConfidence = (
-  abstractLayout: AbstractLayout,
-  instance: Instance,
-  model: Model,
-  diagram: AbstractDiagram
-): number => {
-  // This function should analyze the abstract layout and instance to compute confidence
+// export const computeConfidence = (
+//   abstractLayout: AbstractLayout,
+//   instance: Instance,
+//   model: Model,
+//   diagram: AbstractDiagram
+// ): number => {
+//   // This function should analyze the abstract layout and instance to compute confidence
 
-  const concretes = compileAbstractLayouts([abstractLayout], model, instance);
+//   const concretes = compileAbstractLayouts([abstractLayout], model, instance);
 
-  if (concretes.length === 0) {
-    return 0;
-  }
+//   if (concretes.length === 0) {
+//     return 0;
+//   }
 
-  // now check if the diagram satisfies these concretes
+//   // now check if the diagram satisfies these concretes
 
-  const confs = concretes.map(concrete =>
-    confidenceOfConcrete(concrete, diagram)
-  );
-  const logConfs = confs.map(c => Math.log(c));
-  const sumLogConfs = logConfs.reduce((acc, c) => acc + c, 0);
-  const avgLogConf = sumLogConfs / logConfs.length;
-  const conf = Math.exp(avgLogConf);
+//   const confs = concretes.map(concrete =>
+//     confidenceOfConcrete(concrete, diagram)
+//   );
+//   const logConfs = confs.map(c => Math.log(c));
+//   const sumLogConfs = logConfs.reduce((acc, c) => acc + c, 0);
+//   const avgLogConf = sumLogConfs / logConfs.length;
+//   const conf = Math.exp(avgLogConf);
 
-  return conf;
-};
+//   return conf;
+// };

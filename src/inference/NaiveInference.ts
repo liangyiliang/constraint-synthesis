@@ -1,7 +1,7 @@
 import {
   AbstractLayout,
   PredSelector,
-  prettyAbstractLayout,
+  prettyClause,
   SigSelector,
 } from '../constraint_language/abstract/AbstractLayout';
 import { checkAbstractLayout } from '../constraint_language/abstract/CheckAbstractLayout';
@@ -15,7 +15,10 @@ import {
 } from '../constraint_language/concrete/ConcreteLayout';
 import { Instance } from '../model_instance/Instance';
 import { Model, simpleCycleModel } from '../model_instance/Model';
-import { AbstractDiagram, computeConfidence } from './ConfidenceScore';
+import {
+  AbstractDiagram,
+  computeConfidence,
+} from './multi_instance/confidences/ConfidenceScore';
 
 export const BOUND = 2;
 

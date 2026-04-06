@@ -5,7 +5,7 @@ import {
 } from '../constraint_language/concrete/ConcreteLayout';
 import {
   AbstractLayout,
-  prettyAbstractLayout,
+  prettyClause,
 } from '../constraint_language/abstract/AbstractLayout';
 import { editorStyle } from './style';
 
@@ -62,7 +62,7 @@ export const AbstractLayoutLoader = ({
             wordBreak: 'break-word',
           }}
         >
-          {layout.map(prettyAbstractLayout).join('\n')}
+          {layout.map(prettyClause).join('\n')}
         </pre>
       </div>
     </div>
