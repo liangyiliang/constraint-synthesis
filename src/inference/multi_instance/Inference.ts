@@ -14,7 +14,7 @@ export const genClauses = (
 } => {
   const pass1Clauses = genFirstPassClauses(bound, model, pairs);
   const pass2Clauses = genSecondPassClauses(bound, model, pairs);
-  console.log('Pass 2 results:');
-  console.log(pass2Clauses);
+  // console.log('Pass 2 results:');
+  // console.log(pass2Clauses);
   return { pass1Clauses, pass2Clauses };
 };

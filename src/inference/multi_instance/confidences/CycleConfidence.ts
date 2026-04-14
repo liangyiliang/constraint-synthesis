@@ -26,7 +26,9 @@ export const checkCyclicLayout = (
   score: number;
   footprints: InstancedCycleFootprint[];
 } => {
-  // The clause doesn't even apply to this diagram, so we consider it vacuously satisfied and give it confidence 1 (and no footprint since it doesn't actually apply)
+  // The clause doesn't even apply to this diagram,
+  // so we consider it vacuously satisfied and give it confidence 1
+  // (and no footprint since it doesn't actually apply)
   if (substs.length === 0) {
     return { score: 1, footprints: [] };
   }
