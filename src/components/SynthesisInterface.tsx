@@ -84,6 +84,7 @@ export const SynthesisInterface = ({
   const diagramRef = useRef<{
     getAbstractDiagram: () => AbstractDiagram;
     setAbstractDiagram: (absDiag: AbstractDiagram) => void;
+    setConstraintEnforcement: (enforce: boolean) => void;
     // setOptimized: (optimized: boolean) => void;
   }>(null);
 

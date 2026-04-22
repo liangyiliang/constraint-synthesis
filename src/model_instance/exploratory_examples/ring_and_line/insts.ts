@@ -91,8 +91,8 @@ const RingAndLineInst5: Instance = {
 };
 export const RingANdLineInsts: Instance[] = [
   //RingAndLineInst0,
-  RingAndLineInst1,
-  RingAndLineInst2,
+  //RingAndLineInst1,
+  //RingAndLineInst2,
   RingAndLineInst3,
   RingAndLineInst4,
   RingAndLineInst5,

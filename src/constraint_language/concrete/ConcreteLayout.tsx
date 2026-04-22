@@ -17,10 +17,10 @@ export const BinaryLayoutOptions = [
 export type BinaryLayoutOption = (typeof BinaryLayoutOptions)[number];
 
 export const UnaryLayoutOptions = [
-  'LeftOfCenter',
-  'RightOfCenter',
-  'AboveCenter',
-  'BelowCenter',
+  // 'LeftOfCenter',
+  // 'RightOfCenter',
+  // 'AboveCenter',
+  // 'BelowCenter',
 ] as const;
 
 export type UnaryLayoutOption = (typeof UnaryLayoutOptions)[number];

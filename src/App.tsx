@@ -1,4 +1,5 @@
 import './App.css';
+import NewSynthesisInterface from './components/NewSynthesisInterface';
 import SynthesisInterface from './components/SynthesisInterface';
 import { BTreeInsts } from './model_instance/exploratory_examples/btree/insts';
 import { BTreeModel } from './model_instance/exploratory_examples/btree/model';
@@ -11,10 +12,10 @@ function App() {
   return (
     <div className="App">
       <main>
-        <SynthesisInterface
+        <NewSynthesisInterface
           initialMode="ClassificationMode"
-          model={RingAndLine}
-          instances={RingANdLineInsts}
+          model={BTreeModel}
+          instances={BTreeInsts}
         />
       </main>
     </div>
@@ -22,11 +23,3 @@ function App() {
 }
 
 export default App;
-
-/*
-<SynthesisInterface
-          initialMode="ClassificationMode"
-          model={BTreeModel}
-          instances={BTreeInsts}
-        />
-*/

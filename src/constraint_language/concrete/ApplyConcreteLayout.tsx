@@ -12,6 +12,8 @@ import {
 } from './ConcreteLayout';
 import { InstanceDiagramBuilder } from '../../diagram/InstanceDiagramBuilder';
 import * as graphlib from '@dagrejs/graphlib';
+import { Var } from '../../components/Diagram';
+import { Num } from '@penrose/core';
 
 export class ConcreteLayoutApplier {
   private db: InstanceDiagramBuilder;
@@ -57,38 +59,49 @@ export class ConcreteLayoutApplier {
     }
   }
 
-  applyStagedLayouts(): void {
+  applyStagedLayouts(constraintEnforcement: Var): void {
+    const { ensure } = this.db.getBloomBuilder();
+
     for (const [cycleId, graph] of this.cycleGraphs) {
-      this.applyCyclicLayout(this.db, cycleId, graph);
+      this.applyCyclicLayout(this.db, cycleId, graph, constraintEnforcement);
     }
 
     for (const layout of this.binaryLayouts) {
-      this.binaryLayoutAppliers[layout.option](
+      const constraints = this.binaryLayoutConstraints[layout.option](
         this.db,
         layout.separation,
         layout.op0,
         layout.op1
       );
+      for (const constraint of constraints) {
+        ensure(bloom.mul(constraint, constraintEnforcement));
+      }
     }
     for (const layout of this.unaryLayout) {
-      this.unaryLayoutAppliers[layout.option](
+      const constraints = this.unaryLayoutConstraints[layout.option](
         this.db,
         layout.separation,
         layout.op
       );
+      for (const constraint of constraints) {
+        ensure(bloom.mul(constraint, constraintEnforcement));
+      }
     }
   }
 
-  private unaryLayoutAppliers: Record<
+  private unaryLayoutConstraints: Record<
     UnaryLayoutOption,
-    (db: InstanceDiagramBuilder, sep: SeparationOption, op: UnboundAtom) => void
+    (
+      db: InstanceDiagramBuilder,
+      sep: SeparationOption,
+      op: UnboundAtom
+    ) => Num[]
   > = {
     AboveCenter: (
       db: InstanceDiagramBuilder,
       sep: SeparationOption,
       op: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape = getShape(db, op);
       const shapeCenter = bloomShape.center;
       const constraint =
@@ -97,14 +110,13 @@ export class ConcreteLayoutApplier {
           : sep.tag === 'AtLeast'
             ? bloom.constraints.greaterThan(shapeCenter[1], sep.distance)
             : bloom.constraints.equal(shapeCenter[1], sep.distance);
-      ensure(constraint);
+      return [constraint];
     },
     BelowCenter: (
       db: InstanceDiagramBuilder,
       sep: SeparationOption,
       op: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape = getShape(db, op);
       const shapeCenter = bloomShape.center;
       const constraint =
@@ -113,14 +125,13 @@ export class ConcreteLayoutApplier {
           : sep.tag === 'AtLeast'
             ? bloom.constraints.lessThan(shapeCenter[1], -sep.distance)
             : bloom.constraints.equal(shapeCenter[1], -sep.distance);
-      ensure(constraint);
+      return [constraint];
     },
     LeftOfCenter: (
       db: InstanceDiagramBuilder,
       sep: SeparationOption,
       op: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape = getShape(db, op);
       const shapeCenter = bloomShape.center;
       const constraint =
@@ -129,14 +140,13 @@ export class ConcreteLayoutApplier {
           : sep.tag === 'AtLeast'
             ? bloom.constraints.lessThan(shapeCenter[0], -sep.distance)
             : bloom.constraints.equal(shapeCenter[0], -sep.distance);
-      ensure(constraint);
+      return [constraint];
     },
     RightOfCenter: (
       db: InstanceDiagramBuilder,
       sep: SeparationOption,
       op: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape = getShape(db, op);
       const shapeCenter = bloomShape.center;
       const constraint =
@@ -145,18 +155,18 @@ export class ConcreteLayoutApplier {
           : sep.tag === 'AtLeast'
             ? bloom.constraints.greaterThan(shapeCenter[0], sep.distance)
             : bloom.constraints.equal(shapeCenter[0], sep.distance);
-      ensure(constraint);
+      return [constraint];
     },
   };
 
-  private binaryLayoutAppliers: Record<
+  private binaryLayoutConstraints: Record<
     BinaryLayoutOption,
     (
       db: InstanceDiagramBuilder,
       sep: SeparationOption,
       op0: UnboundAtom,
       op1: UnboundAtom
-    ) => void
+    ) => Num[]
   > = {
     LeftOf: (
       db: InstanceDiagramBuilder,
@@ -164,7 +174,6 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape0 = getShape(db, op0);
       const bloomShape1 = getShape(db, op1);
       const constraint =
@@ -182,7 +191,7 @@ export class ConcreteLayoutApplier {
                 bloomShape0.center[0],
                 bloom.sub(bloomShape1.center[0], sep.distance)
               );
-      ensure(constraint);
+      return [constraint];
     },
     RightOf: (
       db: InstanceDiagramBuilder,
@@ -190,7 +199,6 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape0 = getShape(db, op0);
       const bloomShape1 = getShape(db, op1);
       const constraint =
@@ -208,7 +216,7 @@ export class ConcreteLayoutApplier {
                 bloomShape0.center[0],
                 bloom.add(bloomShape1.center[0], sep.distance)
               );
-      ensure(constraint);
+      return [constraint];
     },
     Above: (
       db: InstanceDiagramBuilder,
@@ -216,7 +224,6 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape0 = getShape(db, op0);
       const bloomShape1 = getShape(db, op1);
       const constraint =
@@ -234,7 +241,7 @@ export class ConcreteLayoutApplier {
                 bloomShape0.center[1],
                 bloom.add(bloomShape1.center[1], sep.distance)
               );
-      ensure(constraint);
+      return [constraint];
     },
     Below: (
       db: InstanceDiagramBuilder,
@@ -242,7 +249,6 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape0 = getShape(db, op0);
       const bloomShape1 = getShape(db, op1);
       const constraint =
@@ -260,7 +266,7 @@ export class ConcreteLayoutApplier {
                 bloomShape0.center[1],
                 bloom.sub(bloomShape1.center[1], sep.distance)
               );
-      ensure(constraint);
+      return [constraint];
     },
     VerticallyAligned: (
       db: InstanceDiagramBuilder,
@@ -268,12 +274,12 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape0 = getShape(db, op0);
       const bloomShape1 = getShape(db, op1);
 
-      ensure(
-        bloom.constraints.equal(bloomShape0.center[0], bloomShape1.center[0])
+      const alignmentConstraint = bloom.constraints.equal(
+        bloomShape0.center[0],
+        bloomShape1.center[0]
       );
 
       const separationConstraint =
@@ -292,20 +298,21 @@ export class ConcreteLayoutApplier {
                 ),
                 sep.distance
               );
-      ensure(separationConstraint);
+      return [alignmentConstraint, separationConstraint];
     },
+
     HorizontallyAligned: (
       db: InstanceDiagramBuilder,
       sep: SeparationOption,
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      const { ensure } = db.getBloomBuilder();
       const bloomShape0 = getShape(db, op0);
       const bloomShape1 = getShape(db, op1);
 
-      ensure(
-        bloom.constraints.equal(bloomShape0.center[1], bloomShape1.center[1])
+      const alignmentConstraint = bloom.constraints.equal(
+        bloomShape0.center[1],
+        bloomShape1.center[1]
       );
 
       const separationConstraint =
@@ -324,7 +331,7 @@ export class ConcreteLayoutApplier {
                 ),
                 sep.distance
               );
-      ensure(separationConstraint);
+      return [alignmentConstraint, separationConstraint];
     },
     DirectlyLeftOf: (
       db: InstanceDiagramBuilder,
@@ -332,8 +339,10 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      this.binaryLayoutAppliers.LeftOf(db, sep, op0, op1);
-      this.binaryLayoutAppliers.HorizontallyAligned(db, sep, op0, op1);
+      return [
+        ...this.binaryLayoutConstraints.LeftOf(db, sep, op0, op1),
+        ...this.binaryLayoutConstraints.HorizontallyAligned(db, sep, op0, op1),
+      ];
     },
     DirectlyRightOf: (
       db: InstanceDiagramBuilder,
@@ -341,8 +350,10 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      this.binaryLayoutAppliers.RightOf(db, sep, op0, op1);
-      this.binaryLayoutAppliers.HorizontallyAligned(db, sep, op0, op1);
+      return [
+        ...this.binaryLayoutConstraints.RightOf(db, sep, op0, op1),
+        ...this.binaryLayoutConstraints.HorizontallyAligned(db, sep, op0, op1),
+      ];
     },
     DirectlyAbove: (
       db: InstanceDiagramBuilder,
@@ -350,8 +361,10 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      this.binaryLayoutAppliers.Above(db, sep, op0, op1);
-      this.binaryLayoutAppliers.VerticallyAligned(db, sep, op0, op1);
+      return [
+        ...this.binaryLayoutConstraints.Above(db, sep, op0, op1),
+        ...this.binaryLayoutConstraints.VerticallyAligned(db, sep, op0, op1),
+      ];
     },
     DirectlyBelow: (
       db: InstanceDiagramBuilder,
@@ -359,8 +372,10 @@ export class ConcreteLayoutApplier {
       op0: UnboundAtom,
       op1: UnboundAtom
     ) => {
-      this.binaryLayoutAppliers.Below(db, sep, op0, op1);
-      this.binaryLayoutAppliers.VerticallyAligned(db, sep, op0, op1);
+      return [
+        ...this.binaryLayoutConstraints.Below(db, sep, op0, op1),
+        ...this.binaryLayoutConstraints.VerticallyAligned(db, sep, op0, op1),
+      ];
     },
     OutsideRingOf: () => {
       throw new Error('OutsideRingOf layout not implemented');
@@ -417,7 +432,8 @@ export class ConcreteLayoutApplier {
   private applyCyclicLayout(
     db: InstanceDiagramBuilder,
     cycleId: string,
-    graph: graphlib.Graph
+    graph: graphlib.Graph,
+    constraintEnforcement: Var
   ): void {
     const graphType = this.checkSingleRingOrLine(graph);
 
@@ -438,25 +454,26 @@ export class ConcreteLayoutApplier {
     const cyclableNodes = graphlib.alg.topsort(graph);
 
     if (cyclableNodes.length >= 3) {
-      this.layoutNodesInCircle(db, cyclableNodes);
+      this.layoutNodesInCircle(db, cyclableNodes, constraintEnforcement);
     }
   }
 
   private layoutNodesInCircle(
     db: InstanceDiagramBuilder,
-    nodes: string[]
+    nodes: string[],
+    constraintEnforcement: Var
   ): void {
     const shapes = nodes.map(node =>
       getShape(db, { tag: 'UnboundAtom', name: node })
     );
 
     const bloomBuilder = db.getBloomBuilder();
-    const { circle, ensure, layer, input, encourage } = bloomBuilder;
+    const { circle, layer, input, encourage, ensure } = bloomBuilder;
 
     const makeInput = (init?: number) => input({ optimized: true, init });
 
     const refCenter: bloom.Vec2 = [makeInput(), makeInput()];
-    const refRadius = makeInput();
+    const refRadius = bloom.mul(makeInput(), constraintEnforcement);
     const refCircle = circle({
       center: refCenter,
       r: refRadius,
@@ -466,6 +483,13 @@ export class ConcreteLayoutApplier {
       fillColor: bloom.none(),
       drag: true,
     });
+
+    ensure(
+      bloom.mul(
+        bloom.constraints.greaterThan(refRadius, 100),
+        constraintEnforcement
+      )
+    );
 
     for (const s of shapes) {
       layer(refCircle, s);
@@ -482,13 +506,20 @@ export class ConcreteLayoutApplier {
       );
 
       const currentRadius = bloom.vdist(refCenter, shapes[i].center);
+
+      // encourage(
+      //   bloom.mul(
+      //     bloom.objectives.equal(currentAngle, desiredAngle),
+      //     constraintEnforcement
+      //   )
+      // );
       encourage(
         bloom.mul(
           bloom.objectives.equal(
             bloom.sin(currentAngle),
             bloom.sin(desiredAngle)
           ),
-          1
+          constraintEnforcement
         )
       );
       encourage(
@@ -497,11 +528,14 @@ export class ConcreteLayoutApplier {
             bloom.cos(currentAngle),
             bloom.cos(desiredAngle)
           ),
-          1
+          constraintEnforcement
         )
       );
       encourage(
-        bloom.mul(bloom.objectives.equal(currentRadius, refRadius), 0.0001)
+        bloom.mul(
+          bloom.objectives.equal(currentRadius, refRadius),
+          constraintEnforcement
+        )
       );
     }
   }

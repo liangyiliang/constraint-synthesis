@@ -79,23 +79,10 @@ const BTreeInst4 = {
   ],
 };
 
-const BTreeInst5 = {
-  atoms: [
-    { name: 'Node$0', type: 'this/Node' },
-    { name: 'Node$1', type: 'this/Node' },
-    { name: 'Node$2', type: 'this/Node' },
-    { name: 'Node$3', type: 'this/Node' },
-    { name: 'Node$4', type: 'this/Node' },
-    { name: 'Node$5', type: 'this/Node' },
-    { name: 'Node$6', type: 'this/Node' },
-    { name: 'Node$7', type: 'this/Node' },
-  ],
-  predicates: [
-    { predicateName: 'left', args: ['Node$6', 'Node$4'] },
-
-    { predicateName: 'right', args: ['Node$1', 'Node$0'] },
-    { predicateName: 'right', args: ['Node$5', 'Node$1'] },
-  ],
-};
-
-export const BTreeInsts: Instance[] = [BTreeInst0, BTreeInst1, BTreeInst2];
+export const BTreeInsts: Instance[] = [
+  BTreeInst0,
+  BTreeInst1,
+  BTreeInst2,
+  BTreeInst3,
+  BTreeInst4,
+];

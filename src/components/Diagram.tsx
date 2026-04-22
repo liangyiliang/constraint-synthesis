@@ -14,28 +14,25 @@ import { AbstractLayout } from '../constraint_language/abstract/AbstractLayout';
 import { compileAbstractLayouts } from '../constraint_language/abstract/ApplyAbstractLayout';
 import { disjoint } from '@penrose/bloom/dist/core/constraints';
 import { AbstractDiagram } from '../inference/multi_instance/inputs/Inputs';
+import { near, notTooClose } from '@penrose/bloom/dist/core/objectives';
+
+export type Var = ReturnType<typeof bloom.DiagramBuilder.prototype.input>;
 
 const buildDiagram = async (
   model: Model,
   instance: Instance,
   layout: AbstractLayout[],
-  interactive: boolean,
-  freezeInitially: AbstractDiagram | undefined,
   seed: string = 'instance'
 ) => {
   const db = new InstanceDiagramBuilder(canvas(500, 400), seed, 5000);
-  const {
-    forall,
-    text,
-    forallWhere,
-    circle,
-    line,
-    layer,
-    group,
-    rectangle,
-    input,
-    ensure,
-  } = db.getBloomBuilder();
+  const { forall, text, forallWhere, circle, line, layer, rectangle, input } =
+    db.getBloomBuilder();
+
+  const constraintEnforcement = input({
+    name: 'constraintEnforcement',
+    optimized: false,
+    init: 1,
+  });
 
   rectangle({
     center: [0, 0],
@@ -67,57 +64,46 @@ const buildDiagram = async (
       const xname = `x_${p.name}`;
       const yname = `y_${p.name}`;
 
-      const xinit = freezeInitially?.[p.name]?.x ?? undefined;
-      const yinit = freezeInitially?.[p.name]?.y ?? undefined;
-
       const cx = input({
         name: xname,
         optimized: true,
-        init: xinit,
       });
       const cy = input({
         name: yname,
         optimized: true,
-        init: yinit,
       });
       p.icon = circle({
         center: [cx, cy],
         r: 25,
-        drag: interactive,
         fillColor: bloom.rgba(1, 0.8, 0, 1),
         strokeColor: bloom.rgba(0, 0, 0, 1),
         strokeWidth: 2,
+        drag: true,
       });
       p.label = text({
         string: p.name,
         center: p.icon.center,
       });
       layer(p.icon, p.label);
-      // p.shape = group({ shapes: [p.icon, p.label] });
+
+      //ensure(bloom.constraints.onCanvas(p.icon, 500, 400));
     });
   }
 
   for (const substance1 of db.atomSubstanceMap.values()) {
     for (const substance2 of db.atomSubstanceMap.values()) {
       if (substance1 !== substance2) {
-        ensure(disjoint(substance1.icon, substance2.icon));
+        // encourage(
+        //   bloom.mul(
+        //     disjoint(substance1.icon, substance2.icon, 0.01),
+        //     constraintEnforcement
+        //   )
+        // );
       }
     }
   }
 
   for (const [predName, bloomPred] of db.predicateMap) {
-    // hack for demo
-    // const col =
-    //   predName === 'NextSegment'
-    //     ? bloom.rgba(1, 0, 0, 1) // red
-    //     : predName === 'TrackSegment'
-    //       ? bloom.rgba(0, 0, 1, 1) // blue
-    //       : predName === 'TransponderOnSegment'
-    //         ? bloom.rgba(0, 0.6, 0, 1) // green
-    //         : predName === 'TrainOnSegment'
-    //           ? bloom.rgba(0.6, 0.8, 0.2, 1) // yellow
-    //           : bloom.rgba(0, 0, 0, 1); // black
-
     const sigs = model.predicates.find(pred => pred.name === predName)!.sigs;
     const bloomTypesOfSigs = sigs.map(sig => db.sigTypeMap.get(sig)!);
     if (bloomTypesOfSigs.length <= 1) {
@@ -166,7 +152,6 @@ const buildDiagram = async (
         );
         line({
           endArrowhead: 'straight',
-          ensureOnCanvas: false,
           strokeColor: bloom.rgba(1, 0, 0, 1),
           start: [start[0], start[1]],
           end: [end[0], end[1]],
@@ -181,58 +166,41 @@ const buildDiagram = async (
     );
   }
 
-  if (freezeInitially === undefined) {
-    const concreteLayouts = compileAbstractLayouts(layout, model, instance);
+  const concreteLayouts = compileAbstractLayouts(layout, model, instance);
 
-    const layoutApplier = new ConcreteLayoutApplier(db);
-    for (const concreteLayout of concreteLayouts) {
-      layoutApplier.stageConcreteLayout(concreteLayout);
-    }
-
-    layoutApplier.applyStagedLayouts();
+  const layoutApplier = new ConcreteLayoutApplier(db);
+  for (const concreteLayout of concreteLayouts) {
+    layoutApplier.stageConcreteLayout(concreteLayout);
   }
+
+  layoutApplier.applyStagedLayouts(constraintEnforcement);
 
   return db.getBloomBuilder().build();
 };
-
-// disable layout programs
-// enable optimization
-// set previous diagram
 
 const TheComponent = (
   {
     model,
     instance,
     layoutProgram,
-    interactive,
-    freezeInitially,
   }: {
     model: Model;
     instance: Instance;
     layoutProgram: AbstractLayout[];
-    interactive: boolean;
-    freezeInitially: AbstractDiagram | undefined;
   },
   ref: ForwardedRef<{
     getAbstractDiagram: () => AbstractDiagram;
-    setAbstractDiagram: (absDiag: AbstractDiagram) => void;
-    // setOptimized: (optimized: boolean) => void;
+    setConstraintEnforcement: (enforced: boolean) => void;
+    getConstraintEnforcement: () => number | undefined;
   }>
 ) => {
   const [seed, setSeed] = useState(0);
+  console.log('Rendered Diagram Component!');
 
   const diagram = bloom.useDiagram(
     useCallback(
-      () =>
-        buildDiagram(
-          model,
-          instance,
-          layoutProgram,
-          interactive,
-          freezeInitially,
-          `${seed}`
-        ),
-      [model, instance, layoutProgram, interactive, freezeInitially, seed]
+      () => buildDiagram(model, instance, layoutProgram, `${seed}`),
+      [model, instance, layoutProgram, seed]
     )
   );
   const getAbstractDiagram = (): AbstractDiagram => {
@@ -259,22 +227,22 @@ const TheComponent = (
     }
   };
 
-  const setAbstractDiagram = (absDiag: AbstractDiagram) => {
-    console.log('Setting absdiag into:');
-    console.log(absDiag);
-    for (const atom of instance.atoms) {
-      const atomName = atom.name;
-      const cx = absDiag[atomName].x;
-      const cy = absDiag[atomName].y;
-      diagram?.setInput(`x_${atomName}`, cx);
-      diagram?.setInput(`y_${atomName}`, cy);
-    }
+  const setConstraintEnforcement = (enforced: boolean) => {
+    console.log('Setting constraint enforcement to', enforced);
+    console.log('Before: ', diagram?.getInput('constraintEnforcement'));
+    diagram?.setInput('constraintEnforcement', enforced ? 1 : 0);
+    console.log('After: ', diagram?.getInput('constraintEnforcement'));
+  };
+
+  const getConstraintEnforcement = (): number | undefined => {
+    const value = diagram?.getInput('constraintEnforcement');
+    return value;
   };
 
   React.useImperativeHandle(ref, () => ({
     getAbstractDiagram,
-    setAbstractDiagram,
-    // setOptimized,
+    setConstraintEnforcement,
+    getConstraintEnforcement,
   }));
 
   return (
