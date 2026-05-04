@@ -75,26 +75,29 @@ export const NewSynthesisInterface = ({
 
   const isLastInstance = currentInstanceIndex === instances.length - 1;
 
+  const runSynthesis = (updatedFeedback: UserFeedbackElement[]) => {
+    const posPairs = updatedFeedback
+      .filter(f => f.feedback === 'Accept' || f.feedback === 'Finish Revision')
+      .map(f => ({ instance: f.instance, diag: f.diagram }));
+    const { pass1Clauses, pass2Clauses } = genClauses(4, model, posPairs);
+    setCurrentVizspec([...pass1Clauses, ...pass2Clauses]);
+  };
+
   const handleNext = () => {
+    runSynthesis(userFeedback.current);
     const nextIndex = loadNextInstance(currentInstanceIndex, instances);
     if (nextIndex === null) return;
     setCurrentInstanceIndex(nextIndex);
-
-    const posPairs = userFeedback.current
-      .filter(f => f.feedback === 'Accept' || f.feedback === 'Finish Revision')
-      .map(f => ({ instance: f.instance, diag: f.diagram }));
-
-    const { pass1Clauses, pass2Clauses } = genClauses(4, model, posPairs);
-    setCurrentVizspec([...pass1Clauses, ...pass2Clauses]);
     setMode('ClassificationMode');
   };
 
   const handleAccept = () => {
-    userFeedback.current.push({
+    const entry: UserFeedbackElement = {
       instance: currentInstance,
       diagram: diagramRef.current?.getAbstractDiagram() || {},
       feedback: 'Accept',
-    });
+    };
+    userFeedback.current.push(entry);
     setMode('AcceptedMode');
   };
 
@@ -110,11 +113,12 @@ export const NewSynthesisInterface = ({
 
   const handleFinishRevision = () => {
     const absDiag = diagramRef.current?.getAbstractDiagram() || {};
-    userFeedback.current.push({
+    const entry: UserFeedbackElement = {
       instance: currentInstance,
       diagram: absDiag,
       feedback: 'Finish Revision',
-    });
+    };
+    userFeedback.current.push(entry);
     setMode('FinishedRevisionMode');
   };
 
@@ -156,18 +160,7 @@ export const NewSynthesisInterface = ({
       <div style={styles.body}>
         {/* Diagram panel */}
         <div style={styles.diagramPanel}>
-          {!isRevising && (
-            <div
-              style={styles.diagramOverlay}
-              onMouseEnter={e =>
-                ((e.currentTarget as HTMLDivElement).style.background =
-                  'rgba(255, 255, 255, 0.5)')
-              }
-              onMouseLeave={e =>
-                ((e.currentTarget as HTMLDivElement).style.background = '')
-              }
-            />
-          )}
+          {!isRevising && <div style={styles.diagramOverlay} />}
           {React.useMemo(
             () => (
               <Diagram
@@ -296,16 +289,6 @@ export const NewSynthesisInterface = ({
             Next →
           </button>
         )}
-        <button
-          onClick={() => {
-            console.log(
-              'Current constraint enforcement input value:',
-              diagramRef.current?.getConstraintEnforcement()
-            );
-          }}
-        >
-          GCE
-        </button>
       </div>
     </div>
   );
@@ -377,7 +360,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute',
     inset: 0,
     zIndex: 10,
-    cursor: 'default',
+    cursor: 'not-allowed',
   },
   sidePanel: {
     width: 280,
